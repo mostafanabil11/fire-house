@@ -1,8 +1,8 @@
 {
-  "name": "clothing-brand-backend",
+  "name": "restaurant-ordering-backend",
   "version": "1.0.0",
-  "description": "NestJS backend for Clothing Brand",
-  "author": "Clothing Brand Team",
+  "description": "NestJS backend for restaurant online ordering",
+  "author": "Restaurant Ordering Team",
   "private": true,
   "license": "MIT",
   "scripts": {
@@ -17,8 +17,9 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "seed:categories": "ts-node -r tsconfig-paths/register src/database/seeds/category.seed.ts",
-    "seed:products": "ts-node -r tsconfig-paths/register src/database/seeds/product.seed.ts"
+    "seed:menu:inspect": "ts-node -r tsconfig-paths/register src/database/seeds/restaurant-menu.seed.ts",
+    "seed:menu": "ts-node -r tsconfig-paths/register src/database/seeds/restaurant-menu.seed.ts --replace-menu",
+    "create:admin": "node scripts/create-admin.js"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",

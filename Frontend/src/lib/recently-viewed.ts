@@ -1,6 +1,6 @@
 "use client";
 
-const STORAGE_KEY = "valiant-recently-viewed";
+const STORAGE_KEY = "restaurant-recently-viewed";
 const MAX_ITEMS = 8;
 
 export interface RecentlyViewedEntry {

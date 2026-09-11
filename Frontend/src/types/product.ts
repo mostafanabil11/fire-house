@@ -5,6 +5,29 @@ export interface ProductSizeStock {
   stock: number;
 }
 
+export interface MenuVariant {
+  id: string;
+  name: string;
+  priceAdjustment: number;
+  isDefault: boolean;
+  isAvailable: boolean;
+}
+
+export interface MenuModifierOption {
+  id: string;
+  name: string;
+  priceAdjustment: number;
+  isAvailable: boolean;
+}
+
+export interface MenuModifierGroup {
+  id: string;
+  name: string;
+  minSelections: number;
+  maxSelections: number;
+  options: MenuModifierOption[];
+}
+
 export interface ProductCategoryRef {
   _id: string;
   name: string;
@@ -16,13 +39,22 @@ export interface Product {
   name: string;
   slug: string;
   description: string | null;
-  color: string;
+  color: string | null;
   styleGroup: string | null;
   category: ProductCategoryRef | string;
   price: number;
   discountPrice: number | null;
   images: string[];
   sizes: ProductSizeStock[];
+  variants: MenuVariant[];
+  modifierGroups: MenuModifierGroup[];
+  dietaryTags: string[];
+  allergens: string[];
+  preparationTimeMinutes: number | null;
+  isAvailable: boolean;
+  trackInventory: boolean;
+  stockQuantity: number | null;
+  displayOrder: number;
   isBestSeller: boolean;
   isActive: boolean;
   averageRating: number;

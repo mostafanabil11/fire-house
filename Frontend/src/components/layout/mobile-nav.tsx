@@ -2,194 +2,152 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronRight, ChevronLeft, Menu } from "lucide-react";
-import { Category } from "@/types/category";
-import {
-  Sheet,
-  SheetTrigger,
-  SheetContent,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
+import { usePathname } from "next/navigation";
+import { Menu, X } from "lucide-react";
+import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
 import { InstagramIcon, FacebookIcon } from "@/components/icons/social-icons";
+import { MobileAccountLinks } from "@/components/layout/mobile-account-links";
+import { RESTAURANT } from "@/config/restaurant";
+import { useLanguage } from "@/i18n/language-provider";
+import type { Category } from "@/types/category";
 
 interface MobileNavProps {
-  categories: Category[];
+  sections: Category[];
 }
 
-export function MobileNav({ categories }: MobileNavProps) {
+// The phone navigation. The desktop header hides its links below md, so
+// without this there is no way to reach the menu, an account, or order
+// tracking from a phone at all.
+export function MobileNav({ sections }: MobileNavProps) {
   const [open, setOpen] = useState(false);
-  // activeCategory keeps track of the currently viewed sub-menu
-  const [activeCategory, setActiveCategory] = useState<Category | null>(null);
+  const pathname = usePathname();
+  const { isArabic } = useLanguage();
+
+  const close = () => setOpen(false);
+
+  const linkClass =
+    "flex min-h-12 items-center text-lg font-black tracking-tight transition-colors hover:text-primary";
 
   return (
-    <Sheet open={open} onOpenChange={(val) => {
-      setOpen(val);
-      if (!val) {
-        // reset drill-down when closing
-        setTimeout(() => setActiveCategory(null), 300);
-      }
-    }}>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger
         render={
-          <Button variant="ghost" size="icon" className="md:hidden" aria-label="Open menu" />
+          <button
+            type="button"
+            aria-label="Open navigation"
+            className="grid size-11 shrink-0 place-items-center rounded-full border border-border md:hidden"
+          />
         }
       >
-        <Menu className="size-5" />
+        <Menu className="size-5" strokeWidth={2.25} />
       </SheetTrigger>
 
       <SheetContent
-        side="left"
-        className="flex flex-col overflow-hidden p-0 data-[side=left]:w-[88vw] data-[side=left]:sm:w-[400px] data-[side=left]:sm:max-w-none"
+        side={isArabic ? "right" : "left"}
+        // The sheet's own floating close button would land on top of the brand
+        // row; this nav puts its own next to it instead.
+        showCloseButton={false}
+        className="flex w-[86vw] max-w-none flex-col p-0 sm:w-[380px]"
       >
-        {/* Main Menu View */}
-        <div
-          className={`absolute inset-0 flex flex-col bg-background transition-transform duration-300 ease-in-out ${
-            activeCategory ? "-translate-x-full" : "translate-x-0"
-          }`}
-        >
-          {/* Generous clearance below the sheet's own close button, then the
-              brand mark, then a true full-bleed divider — full sheet width,
-              not fighting the content's own side padding. */}
-          <div className="pt-16 pb-6 px-margin-mobile text-left">
-            <Link
-              href="/"
-              onClick={() => setOpen(false)}
-              className="font-sans text-2xl font-extrabold tracking-[0.15em] text-foreground"
-            >
-              VALIANT
-            </Link>
-          </div>
-          <div className="h-px w-full bg-border" />
-
-          <nav className="flex flex-1 flex-col gap-[26px] overflow-y-auto px-margin-mobile pt-9 pb-8">
-            <Link
-              href="/"
-              onClick={() => setOpen(false)}
-              className="text-[15px] font-bold tracking-[0.1em] text-muted-foreground uppercase transition-opacity hover:text-foreground hover:opacity-70"
-            >
-              Home
-            </Link>
-
-            {categories.map((category) => {
-              const hasChildren = category.children && category.children.length > 0;
-              return (
-                <div key={category._id} className="flex items-center justify-between">
-                  {hasChildren ? (
-                    <button
-                      onClick={() => setActiveCategory(category)}
-                      className="flex w-full items-center justify-between py-1 text-left text-[15px] font-semibold tracking-[0.1em] text-muted-foreground uppercase transition-opacity hover:opacity-70 hover:text-foreground"
-                    >
-                      {category.name}
-                      <ChevronRight className="size-5 text-muted-foreground" strokeWidth={1.5} />
-                    </button>
-                  ) : (
-                    <Link
-                      href={`/${category.slug}`}
-                      onClick={() => setOpen(false)}
-                      className="w-full py-1 text-left text-[15px] font-semibold tracking-[0.1em] text-muted-foreground uppercase transition-opacity hover:opacity-70 hover:text-foreground"
-                    >
-                      {category.name}
-                    </Link>
-                  )}
-                </div>
-              );
-            })}
-
-            <Link
-              href="/sale"
-              onClick={() => setOpen(false)}
-              className="text-[15px] font-bold tracking-[0.1em] text-[#B3261E] uppercase transition-opacity hover:opacity-70"
-            >
-              20% off selected items
-            </Link>
-
-            <Link
-              href="/contact"
-              onClick={() => setOpen(false)}
-              className="text-[15px] font-semibold tracking-[0.1em] text-muted-foreground uppercase transition-opacity hover:opacity-70 hover:text-foreground"
-            >
-              Contact Us
-            </Link>
-          </nav>
-
-          {/* Full-bleed divider matching the one under the brand mark, then a
-              compact footer block with a little breathing room on each side. */}
-          <div className="shrink-0">
-            <div className="h-px w-full bg-border" />
-            <div className="flex flex-col items-start gap-4 px-margin-mobile pt-6 pb-8">
-              <div className="flex gap-6">
-                <a
-                  href="https://instagram.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Instagram"
-                  className="text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  <InstagramIcon className="size-5" />
-                </a>
-                <a
-                  href="https://facebook.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Facebook"
-                  className="text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  <FacebookIcon className="size-5" />
-                </a>
-              </div>
-              <p className="text-left text-[11px] tracking-[0.1em] text-muted-foreground uppercase">
-                Modern Luxury. Defined by restraint.
-              </p>
-              <p className="text-left text-[10px] tracking-[0.1em] text-muted-foreground/70 uppercase">
-                © {new Date().getFullYear()} Valiant. All rights reserved.
-              </p>
-            </div>
-          </div>
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <Link href="/" onClick={close} className="flex items-center gap-3">
+            <span className="grid size-9 place-items-center rounded-full bg-primary font-heading text-base font-black text-primary-foreground">
+              {RESTAURANT.shortName}
+            </span>
+            <span className="font-heading text-lg font-black tracking-[-0.02em] uppercase">
+              {RESTAURANT.name}
+            </span>
+          </Link>
+          <button
+            type="button"
+            onClick={close}
+            aria-label="Close navigation"
+            className="grid size-11 place-items-center rounded-full transition-colors hover:bg-muted"
+          >
+            <X className="size-5" strokeWidth={2} />
+          </button>
         </div>
 
-        {/* Subcategory Drill-down View */}
-        <div
-          className={`absolute inset-0 flex flex-col bg-background transition-transform duration-300 ease-in-out ${
-            activeCategory ? "translate-x-0" : "translate-x-full"
-          }`}
-        >
-          <div className="pt-16">
-            <div className="h-px w-full bg-border" />
-          </div>
+        <nav aria-label="Main navigation" className="flex-1 overflow-y-auto px-5 py-5">
+          <Link
+            href="/menu"
+            onClick={close}
+            aria-current={pathname === "/menu" ? "page" : undefined}
+            className={`${linkClass} text-primary`}
+          >
+            Full menu
+          </Link>
 
-          <div className="flex items-center gap-3 px-margin-mobile pt-9 pb-6">
-            <button
-              onClick={() => setActiveCategory(null)}
-              className="-ml-1 p-1 text-muted-foreground transition-colors hover:text-foreground"
-              aria-label="Go back"
-            >
-              <ChevronLeft className="size-5" strokeWidth={1.5} />
-            </button>
-            <span className="text-[16px] font-bold tracking-[0.1em] text-foreground uppercase">
-              {activeCategory?.name}
-            </span>
-          </div>
+          {sections.length > 0 && (
+            <div className="mt-4 border-t border-border pt-4">
+              <p className="mb-1 text-xs font-black tracking-[0.14em] text-muted-foreground uppercase">
+                Sections
+              </p>
+              {sections.map((section) => (
+                <Link
+                  key={section._id}
+                  href={`/menu#${section.slug}`}
+                  onClick={close}
+                  className="flex min-h-11 items-center text-base font-bold text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {section.name}
+                </Link>
+              ))}
+            </div>
+          )}
 
-          <nav className="flex flex-1 flex-col gap-[26px] overflow-y-auto px-margin-mobile pb-8">
-            <Link
-              href={`/${activeCategory?.slug}`}
-              onClick={() => setOpen(false)}
-              className="text-[14px] font-medium tracking-[0.1em] text-muted-foreground uppercase transition-opacity hover:text-foreground"
-            >
-              Shop All {activeCategory?.name}
+          <div className="mt-4 border-t border-border pt-4">
+            <Link href="/cart" onClick={close} className={linkClass}>
+              Your order
             </Link>
+            <Link href="/track-order" onClick={close} className={linkClass}>
+              Track an order
+            </Link>
+            <MobileAccountLinks onNavigate={close} />
+          </div>
 
-            {activeCategory?.children?.map((child) => (
-              <Link
-                key={child._id}
-                href={`/${activeCategory.slug}/${child.slug}`}
-                onClick={() => setOpen(false)}
-                className="text-[14px] font-medium tracking-[0.1em] text-muted-foreground uppercase transition-opacity hover:text-foreground"
-              >
-                {child.name}
-              </Link>
-            ))}
-          </nav>
+          <div className="mt-4 border-t border-border pt-4">
+            <Link
+              href="/contact"
+              onClick={close}
+              className="flex min-h-11 items-center text-base font-bold text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Contact us
+            </Link>
+            <Link
+              href="/faq"
+              onClick={close}
+              className="flex min-h-11 items-center text-base font-bold text-muted-foreground transition-colors hover:text-foreground"
+            >
+              FAQ
+            </Link>
+          </div>
+        </nav>
+
+        <div className="border-t border-border px-5 py-5">
+          <div className="flex gap-5">
+            <a
+              href="https://instagram.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+              className="grid size-11 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <InstagramIcon className="size-5" />
+            </a>
+            <a
+              href="https://facebook.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Facebook"
+              className="grid size-11 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <FacebookIcon className="size-5" />
+            </a>
+          </div>
+          <p className="mt-4 text-xs text-muted-foreground">
+            © {new Date().getFullYear()} {RESTAURANT.name}
+          </p>
         </div>
       </SheetContent>
     </Sheet>

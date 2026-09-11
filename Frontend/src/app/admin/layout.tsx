@@ -4,7 +4,8 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { AdminNav } from "@/components/admin/admin-nav";
+import { AdminNav, AdminMobileNav } from "@/components/admin/admin-nav";
+import { RESTAURANT } from "@/config/restaurant";
 
 export default function AdminLayout({ children }: LayoutProps<"/admin">) {
   const router = useRouter();
@@ -26,15 +27,26 @@ export default function AdminLayout({ children }: LayoutProps<"/admin">) {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-(--spacing-container-max) gap-gutter px-margin-mobile pt-12 pb-stack-lg md:px-margin-desktop md:pt-16">
-      <aside className="hidden w-56 shrink-0 md:block">
-        <Link href="/" className="mb-8 block font-sans text-[26px] font-extrabold tracking-[0.15em] text-foreground">
-          VALIANT
-        </Link>
-        <p className="mb-4 text-[11px] font-semibold tracking-[0.1em] text-muted-foreground uppercase">Admin</p>
-        <AdminNav />
-      </aside>
-      <div className="min-w-0 flex-1">{children}</div>
-    </div>
+    <>
+      {/* pb-20 on small screens clears the fixed bottom bar, so the last order
+          on the board is never trapped underneath it. */}
+      <div className="mx-auto flex w-full max-w-7xl gap-6 px-4 pt-6 pb-20 sm:px-6 md:pt-10 md:pb-16">
+        <aside className="hidden w-56 shrink-0 md:block">
+          <Link
+            href="/"
+            className="mb-6 block font-heading text-xl font-black tracking-tight uppercase"
+          >
+            {RESTAURANT.name}
+          </Link>
+          <p className="mb-3 px-4 text-[0.7rem] font-black tracking-[0.14em] text-muted-foreground uppercase">
+            Admin
+          </p>
+          <AdminNav />
+        </aside>
+        <div className="min-w-0 flex-1">{children}</div>
+      </div>
+
+      <AdminMobileNav />
+    </>
   );
 }

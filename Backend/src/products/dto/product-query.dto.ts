@@ -1,11 +1,14 @@
 import { z } from 'zod';
 import { createZodDto } from 'nestjs-zod';
 import { PRODUCT_SIZES } from '../schemas/product-size-stock.schema';
+import { DIETARY_TAGS } from '../schemas/menu-option.schema';
 
 export const productQuerySchema = z.object({
   category: z.string().optional(),
   size: z.enum(PRODUCT_SIZES).optional(),
   color: z.string().trim().min(1).max(50).optional(),
+  dietaryTag: z.enum(DIETARY_TAGS).optional(),
+  available: z.coerce.boolean().optional(),
   // Minor units (piastres), same convention as Product.price — the client
   // converts from whatever major-unit input it shows the shopper.
   minPrice: z.coerce.number().int().min(0).optional(),

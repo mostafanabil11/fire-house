@@ -7,8 +7,8 @@
  * Connection strings come from the environment and are never written to disk,
  * since they carry the database password.
  *
- *   SOURCE_URI="mongodb://localhost:27017/clothing-brand" \
- *   TARGET_URI="mongodb+srv://user:pass@cluster.mongodb.net/clothing-brand" \
+ *   SOURCE_URI="mongodb://localhost:27017/restaurant-ordering" \
+ *   TARGET_URI="mongodb+srv://user:pass@cluster.mongodb.net/restaurant-ordering" \
  *   node scripts/migrate-database.js
  *
  * Safe to re-run: documents are matched on _id and replaced, so a second run
@@ -62,7 +62,7 @@ async function main() {
   requireUri(SOURCE_URI, 'SOURCE_URI');
   requireUri(TARGET_URI, 'TARGET_URI');
 
-  const sourceDbName = databaseNameFrom(SOURCE_URI, 'clothing-brand');
+  const sourceDbName = databaseNameFrom(SOURCE_URI, 'restaurant-ordering');
   const targetDbName = databaseNameFrom(TARGET_URI, sourceDbName);
 
   console.log(`Source: ${describe(SOURCE_URI)}`);

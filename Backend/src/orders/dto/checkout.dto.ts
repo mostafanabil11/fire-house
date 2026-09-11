@@ -12,8 +12,9 @@ export const guestShippingAddressSchema = z.object({
   lastName: z.string().min(1, 'Last name is required').max(100),
   phone: z.string().min(6, 'Please provide a valid phone number').max(30),
   addressLine: z.string().min(1, 'Address is required').max(300),
-  city: z.string().min(1, 'City is required').max(100),
-  governorate: z.enum(EGYPT_GOVERNORATES),
+  // Optional: checkout asks for the address line alone.
+  city: z.string().trim().max(100).optional(),
+  governorate: z.enum(EGYPT_GOVERNORATES).optional().nullable(),
   postalCode: z.string().max(20).optional().nullable(),
 });
 
@@ -30,7 +31,11 @@ export const checkoutSchema = z
     shippingAddress: guestShippingAddressSchema.optional(),
     items: z.array(cartItemSchema).max(100).optional(),
 
-    paymentMethod: z.enum(['cod', 'card']).default('cod'),
+    paymentMethod: z.enum(['cod', 'card', 'instapay']).default('cod'),
+    // Quoted by the customer after they make the InstaPay transfer. Required
+    // for that method and rejected for the others, so an order can never
+    // carry a reference that means nothing.
+    paymentReference: z.string().trim().min(3).max(60).optional(),
     // Optional — if the client doesn't supply one, the server generates one
     // internally so retries within a single checkout attempt still dedupe.
     // A client-supplied key lets a *new* checkout click after a network
@@ -42,6 +47,21 @@ export const checkoutSchema = z
   // in the service so a malformed request is rejected before it can touch
   // stock, and so the error points at the specific missing field.
   .superRefine((data, ctx) => {
+    if (data.paymentMethod === 'instapay' && !data.paymentReference) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['paymentReference'],
+        message: 'Enter the reference from your InstaPay transfer',
+      });
+    }
+    if (data.paymentMethod !== 'instapay' && data.paymentReference) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['paymentReference'],
+        message: 'A payment reference only applies to InstaPay orders',
+      });
+    }
+
     if (data.addressId) {
       return;
     }

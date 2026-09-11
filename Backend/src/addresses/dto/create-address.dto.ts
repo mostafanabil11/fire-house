@@ -7,8 +7,10 @@ export const createAddressSchema = z.object({
   lastName: z.string().min(1, 'Last name is required').max(100),
   phone: z.string().min(6, 'Please provide a valid phone number').max(30),
   addressLine: z.string().min(1, 'Address is required').max(300),
-  city: z.string().min(1, 'City is required').max(100),
-  governorate: z.enum(EGYPT_GOVERNORATES),
+  // Checkout asks for the address line alone now. These remain accepted so
+  // existing clients and saved addresses keep working, but nothing requires them.
+  city: z.string().trim().max(100).optional(),
+  governorate: z.enum(EGYPT_GOVERNORATES).optional().nullable(),
   postalCode: z.string().max(20).optional().nullable(),
   isDefault: z.boolean().optional(),
 });

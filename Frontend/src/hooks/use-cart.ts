@@ -1,27 +1,30 @@
 "use client";
 
+import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCurrentUser } from "./use-current-user";
-import { useCartStore } from "@/store/cart";
+import { useCartStore, buildLocalLineId, normalizeNote } from "@/store/cart";
+import type { LocalCartInput } from "@/store/cart";
 import {
   getServerCart,
   addServerCartItem,
-  updateServerCartItem,
-  removeServerCartItem,
+  updateServerCartLine,
+  removeServerCartLine,
   validateCart,
 } from "@/lib/api/cart";
-import type { ResolvedCart } from "@/types/cart";
-import type { ProductSize } from "@/types/product";
+import type { CartLine, CartSelection, ResolvedCart } from "@/types/cart";
 
 const EMPTY_CART: ResolvedCart = { items: [], subtotal: 0, hasChanges: false };
 
-// Two cart sources behind one interface: signed-in users read/write the
-// real server cart (task 2) directly, so it's what checkout will also see.
-// Signed-out visitors keep using the local zustand store as a holding pen —
-// still re-priced through the same public /cart/validate endpoint the
-// server cart uses internally, so a guest never sees a price the server
-// wouldn't also charge. The local store gets merged into the server cart
-// on login (see the login page's onSuccess).
+// Two cart sources behind one interface: signed-in customers read/write the
+// real server cart directly, so it is what checkout will also see. Guests keep
+// using the local zustand store as a holding pen — still re-priced through the
+// same public /cart/validate endpoint the server cart uses internally, so a
+// guest never sees a price the server wouldn't also charge. The local store is
+// merged into the server cart on login (see the login page's onSuccess).
+//
+// Either way the UI works in terms of an opaque line `key`: the server's line
+// key when signed in, the local deterministic id when not.
 export function useCart() {
   const { data: user } = useCurrentUser();
   const isAuthenticated = !!user;
@@ -29,7 +32,7 @@ export function useCart() {
 
   const localItems = useCartStore((s) => s.items);
   const localAddItem = useCartStore((s) => s.addItem);
-  const localUpdateQuantity = useCartStore((s) => s.updateQuantity);
+  const localSetQuantity = useCartStore((s) => s.setQuantity);
   const localRemoveItem = useCartStore((s) => s.removeItem);
 
   const serverCartQuery = useQuery({
@@ -38,67 +41,90 @@ export function useCart() {
     enabled: isAuthenticated,
   });
 
-  const localValidationKey = localItems.map((i) => `${i.productId}:${i.size}:${i.quantity}`).join("|");
+  const localSelections: CartSelection[] = useMemo(
+    () =>
+      localItems.map((i) => ({
+        productId: i.productId,
+        variantId: i.variantId,
+        modifierOptionIds: i.modifierOptionIds,
+        note: i.note,
+        quantity: i.quantity,
+      })),
+    [localItems],
+  );
+
+  const localValidationKey = localItems.map((i) => `${i.lineId}:${i.quantity}`).join("|");
   const localValidateQuery = useQuery({
     queryKey: ["cart", "local-validate", localValidationKey],
-    queryFn: () => validateCart(localItems.map((i) => ({ productId: i.productId, size: i.size, quantity: i.quantity }))),
+    queryFn: () => validateCart(localSelections),
     enabled: !isAuthenticated && localItems.length > 0,
   });
 
-  const cart: ResolvedCart = isAuthenticated
-    ? (serverCartQuery.data ?? EMPTY_CART)
-    : localItems.length > 0
-      ? (localValidateQuery.data ?? EMPTY_CART)
-      : EMPTY_CART;
+  const cart: ResolvedCart = useMemo(() => {
+    if (isAuthenticated) {
+      const data = serverCartQuery.data;
+      if (!data) return EMPTY_CART;
+      // Signed in, the server's own line key is the handle.
+      return { ...data, items: data.items.map((line) => ({ ...line, key: line.lineKey })) };
+    }
+
+    if (localItems.length === 0) return EMPTY_CART;
+    const data = localValidateQuery.data;
+    if (!data) return EMPTY_CART;
+
+    // /cart/validate answers one line per line sent, in order, so the local id
+    // that produced each resolved line is the one at the same index.
+    return {
+      ...data,
+      items: data.items.map((line, index) => ({
+        ...line,
+        key: localItems[index]?.lineId ?? line.lineKey,
+      })),
+    };
+  }, [isAuthenticated, serverCartQuery.data, localValidateQuery.data, localItems]);
 
   const isLoading = isAuthenticated ? serverCartQuery.isLoading : localValidateQuery.isFetching;
 
   const addItemMutation = useMutation({
-    mutationFn: (vars: { productId: string; size: ProductSize; quantity: number }) =>
-      addServerCartItem(vars.productId, vars.size, vars.quantity),
+    mutationFn: (selection: CartSelection) => addServerCartItem(selection),
     onSuccess: (data) => queryClient.setQueryData(["cart", "server"], data),
   });
 
-  const updateItemMutation = useMutation({
-    mutationFn: (vars: { productId: string; size: ProductSize; quantity: number }) =>
-      updateServerCartItem(vars.productId, vars.size, vars.quantity),
+  const setQuantityMutation = useMutation({
+    mutationFn: (vars: { lineKey: string; quantity: number }) =>
+      updateServerCartLine(vars.lineKey, vars.quantity),
     onSuccess: (data) => queryClient.setQueryData(["cart", "server"], data),
   });
 
-  const removeItemMutation = useMutation({
-    mutationFn: (vars: { productId: string; size: ProductSize }) => removeServerCartItem(vars.productId, vars.size),
+  const removeLineMutation = useMutation({
+    mutationFn: (lineKey: string) => removeServerCartLine(lineKey),
     onSuccess: (data) => queryClient.setQueryData(["cart", "server"], data),
   });
 
-  function addItem(
-    productId: string,
-    size: ProductSize,
-    quantity: number,
-    display: { slug: string; name: string; color: string; price: number; image: string },
-  ) {
+  // `display` is what the guest cart shows before the server has answered.
+  function addItem(selection: CartSelection, display: Pick<LocalCartInput, "slug" | "name" | "image" | "price">) {
+    const normalized: CartSelection = { ...selection, note: normalizeNote(selection.note) };
+
     if (isAuthenticated) {
-      addItemMutation.mutate({ productId, size, quantity });
+      addItemMutation.mutate(normalized);
     } else {
-      // price is stored only for instant optimistic display before the
-      // guest logs in or visits the cart page — cart/checkout always
-      // re-resolve through validateCart/getServerCart, never trust this.
-      localAddItem({ productId, slug: display.slug, name: display.name, color: display.color, size, price: display.price, image: display.image }, quantity);
+      localAddItem({ ...normalized, ...display });
     }
   }
 
-  function updateQuantity(productId: string, size: ProductSize, quantity: number) {
+  function setQuantity(key: string, quantity: number) {
     if (isAuthenticated) {
-      updateItemMutation.mutate({ productId, size, quantity });
+      setQuantityMutation.mutate({ lineKey: key, quantity });
     } else {
-      localUpdateQuantity(productId, size, quantity);
+      localSetQuantity(key, quantity);
     }
   }
 
-  function removeItem(productId: string, size: ProductSize) {
+  function removeItem(key: string) {
     if (isAuthenticated) {
-      removeItemMutation.mutate({ productId, size });
+      removeLineMutation.mutate(key);
     } else {
-      localRemoveItem(productId, size);
+      localRemoveItem(key);
     }
   }
 
@@ -110,7 +136,10 @@ export function useCart() {
     isAuthenticated,
     itemCount,
     addItem,
-    updateQuantity,
+    setQuantity,
     removeItem,
   };
 }
+
+export type { CartLine };
+export { buildLocalLineId };

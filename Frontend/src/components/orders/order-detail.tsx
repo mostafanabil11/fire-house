@@ -6,6 +6,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Truck } from "lucide-react";
 import { formatPrice } from "@/lib/format";
+import { paymentSummaryLabel } from "@/lib/payment-label";
+import { addressText } from "@/lib/address-text";
 import { cancelOrder } from "@/lib/api/orders";
 import type { Order } from "@/types/order";
 
@@ -49,7 +51,7 @@ export function OrderDetail({ order, canCancel = true }: { order: Order; canCanc
             <div className="flex-1">
               <p className="text-[13px] font-medium text-foreground">{item.name}</p>
               <p className="text-[12px] text-muted-foreground">
-                {item.color} · Size {item.size} · Qty {item.quantity}
+                {[item.color, item.size, `Qty ${item.quantity}`].filter(Boolean).join(" · ")}
               </p>
             </div>
             <p className="text-[13px] text-foreground">{formatPrice(item.lineTotal)}</p>
@@ -63,7 +65,7 @@ export function OrderDetail({ order, canCancel = true }: { order: Order; canCanc
           <span className="text-foreground">{formatPrice(order.subtotal)}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span className="text-muted-foreground">Shipping</span>
+          <span className="text-muted-foreground">Delivery fee</span>
           <span className="text-foreground">{order.shippingCost === 0 ? "Free" : formatPrice(order.shippingCost)}</span>
         </div>
         {order.discountAmount > 0 && (
@@ -82,33 +84,21 @@ export function OrderDetail({ order, canCancel = true }: { order: Order; canCanc
         <div className="mt-6 flex items-center justify-between border border-foreground p-4 text-[13px]">
           <span className="flex items-center gap-3 text-foreground">
             <Truck className="size-4" strokeWidth={1.5} />
-            Tracking Number
+            Delivery reference
           </span>
           <span className="font-medium text-foreground">{order.trackingNumber}</span>
         </div>
       )}
 
       <div className="mt-8 border border-border bg-muted p-6 text-[13px]">
-        <p className="mb-2 text-[12px] font-semibold tracking-[0.1em] text-foreground uppercase">Shipping To</p>
+        <p className="mb-2 text-[12px] font-semibold tracking-[0.1em] text-foreground uppercase">Deliver To</p>
         <p className="text-foreground">
           {order.shippingAddress.firstName} {order.shippingAddress.lastName}
         </p>
-        <p className="text-muted-foreground">{order.shippingAddress.addressLine}</p>
-        <p className="text-muted-foreground">
-          {order.shippingAddress.city}, {order.shippingAddress.governorate}
-        </p>
+        <p className="text-muted-foreground">{addressText(order.shippingAddress)}</p>
         <p className="text-muted-foreground">{order.shippingAddress.phone}</p>
         <p className="mt-2 text-foreground">
-          Payment:{" "}
-          {order.paymentMethod === "cod"
-            ? "Cash on Delivery"
-            : order.paymentStatus === "paid"
-              ? "Paid by card"
-              : order.paymentStatus === "refunded"
-                ? "Refunded"
-                : order.paymentStatus === "failed"
-                  ? "Card payment failed"
-                  : "Card — awaiting payment"}
+          Payment: {paymentSummaryLabel(order)}
         </p>
       </div>
 

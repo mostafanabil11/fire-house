@@ -1,9 +1,10 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { PaymentCallbackContent } from "./payment-callback-content";
+import { RESTAURANT } from "@/config/restaurant";
 
 export const metadata: Metadata = {
-  title: "Processing Payment — Valiant",
+  title: `Processing Payment — ${RESTAURANT.name}`,
   robots: { index: false, follow: false },
 };
 

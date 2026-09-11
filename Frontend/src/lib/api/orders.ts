@@ -1,3 +1,4 @@
+import type { CartItemPayload } from "./cart";
 import { apiClient } from "./client";
 import type { Order, OrderSummary } from "@/types/order";
 
@@ -26,22 +27,25 @@ export interface GuestShippingAddress {
   lastName: string;
   phone: string;
   addressLine: string;
-  city: string;
-  governorate: string;
+  city?: string;
+  governorate?: string | null;
   postalCode?: string | null;
 }
 
 export interface CheckoutInput {
   idempotencyKey: string;
-  paymentMethod: "cod" | "card";
+  paymentMethod: "cod" | "card" | "instapay";
   couponCode?: string | null;
+  // Quoted by the customer after an InstaPay transfer; rejected by the
+  // server for any other method.
+  paymentReference?: string | null;
   // Signed-in: pick a saved address, cart comes from the server.
   addressId?: string | null;
   // Guest: contact + address typed inline, cart lines sent along. The server
   // re-prices every line regardless, so these are a statement of intent only.
   email?: string | null;
   shippingAddress?: GuestShippingAddress | null;
-  items?: { productId: string; size: string; quantity: number }[];
+  items?: CartItemPayload[];
 }
 
 export async function checkout(input: CheckoutInput): Promise<CheckoutResponse> {
@@ -53,6 +57,7 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResponse> 
   >("/orders/checkout", {
     idempotencyKey: input.idempotencyKey,
     paymentMethod: input.paymentMethod,
+    ...(input.paymentReference ? { paymentReference: input.paymentReference } : {}),
     ...(input.couponCode ? { couponCode: input.couponCode } : {}),
     ...(input.addressId
       ? { addressId: input.addressId }
@@ -81,7 +86,7 @@ export async function checkout(input: CheckoutInput): Promise<CheckoutResponse> 
 // tab, be sent on unrelated requests, or end up in a shared link or a
 // referrer header. A guest who loses it falls back to the email lookup below.
 
-const TOKEN_KEY_PREFIX = "valiant:order-token:";
+const TOKEN_KEY_PREFIX = "restaurant:order-token:";
 
 export function rememberOrderToken(orderNumber: string, token: string): void {
   if (typeof window === "undefined") return;
@@ -153,11 +158,16 @@ export interface AdminOrderListItem {
   _id: string;
   orderNumber: string;
   user: { _id: string; firstName: string; lastName: string; email: string } | null;
+  guestEmail: string | null;
+  // Carries the customer's name and phone for guest orders, which is most of
+  // them in a restaurant.
+  shippingAddress: Order["shippingAddress"];
   items: Order["items"];
   total: number;
   currency: string;
-  paymentMethod: "cod" | "card";
+  paymentMethod: Order["paymentMethod"];
   paymentStatus: Order["paymentStatus"];
+  paymentReference: string | null;
   fulfillmentStatus: Order["fulfillmentStatus"];
   trackingNumber: string | null;
   createdAt: string;
@@ -165,7 +175,10 @@ export interface AdminOrderListItem {
 
 export interface AdminOrderQuery {
   paymentStatus?: Order["paymentStatus"];
-  fulfillmentStatus?: Order["fulfillmentStatus"];
+  // One status, or several comma-separated — the board's "Needs action" tab
+  // is two fulfilment statuses seen as one queue.
+  fulfillmentStatus?: string;
+  q?: string;
   page?: number;
   limit?: number;
 }
@@ -193,7 +206,12 @@ export async function getAdminOrder(orderNumber: string): Promise<Order & { user
 
 export async function updateOrderStatus(
   orderNumber: string,
-  data: { fulfillmentStatus?: "shipped" | "delivered"; paymentStatus?: "refunded"; trackingNumber?: string },
+  data: {
+    fulfillmentStatus?: "confirmed";
+    // "paid" is how staff confirm an InstaPay transfer landed.
+    paymentStatus?: "paid" | "refunded";
+    trackingNumber?: string;
+  },
 ): Promise<Order> {
   const res = await apiClient.patch<ApiEnvelope<Order>>(`/orders/${orderNumber}/status`, data);
   return res.data.data;

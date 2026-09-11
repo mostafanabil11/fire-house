@@ -17,19 +17,25 @@ import { ProductSize } from '@/products/schemas/product-size-stock.schema';
 import { CheckoutDto } from './dto/checkout.dto';
 import { UpdateOrderStatusDto } from './dto/update-order-status.dto';
 import { AdminOrderQueryDto } from './dto/admin-order-query.dto';
+import { ConfigService } from '@/config/config.service';
+import { NotificationsService } from '@/notifications/notifications.service';
 import { CartService } from '@/cart/cart.service';
 import { AddressesService } from '@/addresses/addresses.service';
 import { ProductsService, StockLine } from '@/products/products.service';
 import { SettingsService } from '@/settings/settings.service';
 import { User, UserDocument } from '@/auth/schemas/user.schema';
 import { CouponsService, CouponApplication } from '@/coupons/coupons.service';
+import { ResolvedModifier } from '@/cart/cart-line.util';
 
 export interface CreateOrderItemInput {
   productId: string;
   name: string;
   slug: string;
-  color: string;
-  size: ProductSize;
+  color: string | null;
+  size: ProductSize | null;
+  variant: { id: string; name: string; priceAdjustment: number } | null;
+  modifiers: ResolvedModifier[];
+  note: string | null;
   image: string | null;
   unitPrice: number;
   quantity: number;
@@ -57,6 +63,7 @@ export interface CreateOrderInput {
   couponCode?: string | null;
   currency: string;
   paymentMethod: PaymentMethod;
+  paymentReference?: string | null;
   idempotencyKey?: string | null;
   stockReserved?: boolean;
   paymentExpiresAt?: Date | null;
@@ -81,6 +88,8 @@ export class OrdersService {
     private eventEmitter: EventEmitter2,
     private paymentService: PaymentService,
     private couponsService: CouponsService,
+    private configService: ConfigService,
+    private notificationsService: NotificationsService
   ) {}
 
   private async nextOrderNumber(): Promise<string> {
@@ -89,9 +98,9 @@ export class OrdersService {
     const counter = await this.counterModel.findOneAndUpdate(
       { key: `order-${dateKey}` },
       { $inc: { seq: 1 } },
-      { upsert: true, new: true },
+      { upsert: true, new: true }
     );
-    return `VLT-${dateKey}-${String(counter.seq).padStart(4, '0')}`;
+    return `${this.configService.orderNumberPrefix}-${dateKey}-${String(counter.seq).padStart(4, '0')}`;
   }
 
   // Pure persistence: takes already-resolved, already-priced line items and
@@ -107,12 +116,15 @@ export class OrdersService {
       }
     }
 
-    const items = input.items.map((item) => ({
+    const items = input.items.map(item => ({
       product: new Types.ObjectId(item.productId),
       name: item.name,
       slug: item.slug,
       color: item.color,
       size: item.size,
+      variant: item.variant,
+      modifiers: item.modifiers,
+      note: item.note,
       image: item.image,
       unitPrice: item.unitPrice,
       quantity: item.quantity,
@@ -139,10 +151,12 @@ export class OrdersService {
       currency: input.currency,
       couponCode: input.couponCode ?? null,
       paymentMethod: input.paymentMethod,
+      paymentReference: input.paymentReference ?? null,
       paymentStatus: 'pending',
-      // COD orders can start being picked immediately — there's no payment to
-      // wait on. Card orders stay unfulfilled until the webhook confirms
-      // payment, so an unpaid order never reaches the fulfilment queue.
+      // COD orders can start being prepared immediately — there's no payment
+      // to wait on, the rider collects it. Card orders stay unfulfilled until
+      // the webhook confirms payment, and InstaPay until a member of staff
+      // confirms the transfer arrived; neither reaches the kitchen unpaid.
       fulfillmentStatus: input.paymentMethod === 'cod' ? 'processing' : 'unfulfilled',
       idempotencyKey: input.idempotencyKey ?? null,
       stockReserved: input.stockReserved ?? false,
@@ -182,7 +196,7 @@ export class OrdersService {
 
     if (dto.paymentMethod === 'card' && !this.paymentService.isConfigured()) {
       throw new ServiceUnavailableException(
-        'Card payment is not available right now. Please choose cash on delivery.',
+        'Card payment is not available right now. Please choose cash on delivery.'
       );
     }
 
@@ -200,8 +214,8 @@ export class OrdersService {
         lastName: saved.lastName,
         phone: saved.phone,
         addressLine: saved.addressLine,
-        city: saved.city,
-        governorate: saved.governorate,
+        city: saved.city ?? '',
+        governorate: saved.governorate ?? '',
         postalCode: saved.postalCode,
       };
     } else {
@@ -213,8 +227,8 @@ export class OrdersService {
         lastName: inline.lastName,
         phone: inline.phone,
         addressLine: inline.addressLine,
-        city: inline.city,
-        governorate: inline.governorate,
+        city: inline.city ?? '',
+        governorate: inline.governorate ?? '',
         postalCode: inline.postalCode ?? null,
       };
     }
@@ -230,15 +244,17 @@ export class OrdersService {
     if (cart.items.length === 0) {
       throw new BadRequestException('Your cart is empty');
     }
-    if (cart.hasChanges || cart.items.some((item) => !item.available)) {
+    if (cart.hasChanges || cart.items.some(item => !item.available)) {
       throw new ConflictException(
-        'Your cart has changed since you last viewed it — please review it before checking out',
+        'Your cart has changed since you last viewed it — please review it before checking out'
       );
     }
 
     const { data: settings } = await this.settingsService.getSettings();
     let shippingCost =
-      cart.subtotal >= settings.freeShippingThresholdMinorUnits ? 0 : settings.flatShippingRateMinorUnits;
+      cart.subtotal >= settings.freeShippingThresholdMinorUnits
+        ? 0
+        : settings.flatShippingRateMinorUnits;
 
     // Who this order belongs to, in the one shape the coupon layer needs.
     // Guests are capped per email address rather than per account.
@@ -261,7 +277,7 @@ export class OrdersService {
     // key stay the same value throughout this call.
     const idempotencyKey = dto.idempotencyKey ?? randomUUID();
 
-    const stockLines: StockLine[] = cart.items.map((item) => ({
+    const stockLines: StockLine[] = cart.items.map(item => ({
       productId: item.productId,
       size: item.size,
       quantity: item.quantity,
@@ -270,19 +286,22 @@ export class OrdersService {
     const reservation = await this.productsService.reserveStockForOrder(stockLines, idempotencyKey);
     if (!reservation.success) {
       throw new ConflictException(
-        `Size ${reservation.failedLine.size} sold out while you were checking out — please update your cart`,
+        `Size ${reservation.failedLine.size} sold out while you were checking out — please update your cart`
       );
     }
 
     // Cart items were already confirmed `available` above, so name/slug/
     // color/unitPrice are guaranteed non-null here even though the resolved
     // type allows null for the unavailable case.
-    const orderItems: CreateOrderItemInput[] = cart.items.map((item) => ({
+    const orderItems: CreateOrderItemInput[] = cart.items.map(item => ({
       productId: item.productId,
       name: item.name!,
       slug: item.slug!,
       color: item.color!,
       size: item.size,
+      variant: item.variant,
+      modifiers: item.modifiers,
+      note: item.note,
       image: item.image,
       unitPrice: item.unitPrice!,
       quantity: item.quantity,
@@ -312,6 +331,7 @@ export class OrdersService {
         couponCode: couponApplication?.coupon.code ?? null,
         currency: settings.currency,
         paymentMethod: dto.paymentMethod,
+        paymentReference: dto.paymentReference ?? null,
         idempotencyKey,
         // Stock was decremented just above, so every order created here owns
         // a live reservation until it's either paid (COD: immediately) or
@@ -337,7 +357,7 @@ export class OrdersService {
           couponApplication.coupon._id,
           redeemer,
           order.data._id,
-          discountAmount,
+          discountAmount
         );
       } catch (err) {
         // Lost a race for the coupon's last redemption slot after the order
@@ -367,6 +387,12 @@ export class OrdersService {
       if (userId) {
         await this.cartService.clearInternal(userId);
       }
+      // Queued before the customer email and outside its `if`: the team must
+      // be told about the order even when there is no address to confirm it
+      // to. enqueueOrderEvent never throws — an alert that cannot be queued
+      // must not fail an order that is already placed and paid for.
+      await this.notificationsService.enqueueOrderEvent(order.data, 'order.new');
+
       if (contactEmail) {
         this.eventEmitter.emit('order.placed', {
           email: contactEmail,
@@ -390,10 +416,11 @@ export class OrdersService {
           first_name: address.firstName,
           last_name: address.lastName,
           phone_number: address.phone,
-          email: contactEmail ?? 'unknown@valiant.local',
+          email: contactEmail ?? 'guest@restaurant.local',
           street: address.addressLine,
-          city: address.city,
-          state: address.governorate,
+          // Paymob rejects empty billing fields; checkout no longer asks for these.
+          city: address.city || 'NA',
+          state: address.governorate || 'NA',
           country: 'EG',
           postal_code: address.postalCode || 'NA',
           apartment: 'NA',
@@ -445,7 +472,7 @@ export class OrdersService {
   // who has already demonstrated they know something private about it.
   async findOneForViewer(
     orderNumber: string,
-    viewer: { userId?: string | null; guestAccessToken?: string | null; email?: string | null },
+    viewer: { userId?: string | null; guestAccessToken?: string | null; email?: string | null }
   ) {
     const order = await this.orderModel.findOne({ orderNumber });
     if (!order) {
@@ -459,14 +486,19 @@ export class OrdersService {
     // Constant-time-ish comparison isn't warranted here (the token is a v4
     // UUID and the lookup is already order-number-scoped), but an empty or
     // null token must never match an order that doesn't have one.
-    if (viewer.guestAccessToken && order.guestAccessToken && order.guestAccessToken === viewer.guestAccessToken) {
+    if (
+      viewer.guestAccessToken &&
+      order.guestAccessToken &&
+      order.guestAccessToken === viewer.guestAccessToken
+    ) {
       return { success: true, message: 'Order retrieved successfully', data: order };
     }
 
     if (viewer.email) {
       const email = viewer.email.trim().toLowerCase();
       const ownerEmail =
-        order.guestEmail ?? (order.user ? (await this.userModel.findById(order.user))?.email?.toLowerCase() : null);
+        order.guestEmail ??
+        (order.user ? (await this.userModel.findById(order.user))?.email?.toLowerCase() : null);
       if (ownerEmail && ownerEmail === email) {
         return { success: true, message: 'Order retrieved successfully', data: order };
       }
@@ -481,8 +513,8 @@ export class OrdersService {
   // Paymob rejects an order whose line items don't add up to the amount it's
   // being asked to charge, so shipping has to appear as its own line.
   private buildPaymobItems(items: CreateOrderItemInput[], shippingCost: number) {
-    const lines = items.map((item) => ({
-      name: `${item.name} (${item.color}, ${item.size})`.slice(0, 100),
+    const lines = items.map(item => ({
+      name: [item.name, item.variant?.name].filter(Boolean).join(' — ').slice(0, 100),
       amount_cents: item.unitPrice,
       quantity: item.quantity,
     }));
@@ -500,11 +532,11 @@ export class OrdersService {
   // restored twice for one order.
   private async releaseReservation(
     order: OrderDocument,
-    reason: 'order_cancelled' | 'order_rollback',
+    reason: 'order_cancelled' | 'order_rollback'
   ): Promise<boolean> {
     const claimed = await this.orderModel.updateOne(
       { _id: order._id, stockReserved: true },
-      { $set: { stockReserved: false } },
+      { $set: { stockReserved: false } }
     );
     if (claimed.modifiedCount !== 1) {
       return false;
@@ -542,7 +574,7 @@ export class OrdersService {
     // disagree with what was charged — never auto-confirm that.
     if (params.amountCents !== order.total) {
       this.logger.error(
-        `Paymob amount mismatch on ${order.orderNumber}: charged ${params.amountCents}, expected ${order.total}`,
+        `Paymob amount mismatch on ${order.orderNumber}: charged ${params.amountCents}, expected ${order.total}`
       );
       return 'amount_mismatch';
     }
@@ -558,7 +590,7 @@ export class OrdersService {
           paymobTransactionId: params.transactionId,
           paymentExpiresAt: null,
         },
-      },
+      }
     );
     if (claimed.modifiedCount !== 1) {
       return 'already_confirmed';
@@ -578,6 +610,11 @@ export class OrdersService {
     if (order.user) {
       await this.cartService.clearInternal(order.user.toString());
     }
+
+    // A card order only becomes real once Paymob confirms, so this is where
+    // the team is told about it — not at checkout, when it might still be
+    // abandoned half way through the payment frame.
+    await this.notificationsService.enqueueOrderEvent(order, 'order.new');
 
     const user = order.user ? await this.userModel.findById(order.user) : null;
     const contactEmail = user?.email ?? order.guestEmail;
@@ -617,7 +654,7 @@ export class OrdersService {
           paymentExpiresAt: null,
           ...(transactionId ? { paymobTransactionId: transactionId } : {}),
         },
-      },
+      }
     );
 
     this.logger.log(`Payment failed for ${order.orderNumber} — stock released`);
@@ -640,7 +677,13 @@ export class OrdersService {
         await this.couponsService.releaseRedemption(order._id);
         await this.orderModel.updateOne(
           { _id: order._id, paymentStatus: 'pending' },
-          { $set: { paymentStatus: 'failed', fulfillmentStatus: 'cancelled', paymentExpiresAt: null } },
+          {
+            $set: {
+              paymentStatus: 'failed',
+              fulfillmentStatus: 'cancelled',
+              paymentExpiresAt: null,
+            },
+          }
         );
         released += 1;
         this.logger.log(`Released expired card reservation for ${order.orderNumber}`);
@@ -661,22 +704,29 @@ export class OrdersService {
   // can see their order can also back out of it, exactly like a member.
   async cancelOrder(
     viewer: { userId?: string | null; guestAccessToken?: string | null },
-    orderNumber: string,
+    orderNumber: string
   ) {
     const { data: order } = await this.findOneForViewer(orderNumber, viewer);
 
     const cancellableFulfillment: FulfillmentStatus[] = ['unfulfilled', 'processing'];
-    if (order.paymentStatus !== 'pending' || !cancellableFulfillment.includes(order.fulfillmentStatus)) {
+    if (
+      order.paymentStatus !== 'pending' ||
+      !cancellableFulfillment.includes(order.fulfillmentStatus)
+    ) {
       throw new ConflictException(
-        'This order can no longer be cancelled — contact support if you need to make changes',
+        'This order can no longer be cancelled — contact support if you need to make changes'
       );
     }
 
     // Conditional update is the guard: two concurrent cancel clicks (or a
     // cancel racing the expiry sweeper/webhook) can't both win.
     const claimed = await this.orderModel.updateOne(
-      { _id: order._id, paymentStatus: 'pending', fulfillmentStatus: { $in: cancellableFulfillment } },
-      { $set: { fulfillmentStatus: 'cancelled', paymentExpiresAt: null } },
+      {
+        _id: order._id,
+        paymentStatus: 'pending',
+        fulfillmentStatus: { $in: cancellableFulfillment },
+      },
+      { $set: { fulfillmentStatus: 'cancelled', paymentExpiresAt: null } }
     );
     if (claimed.modifiedCount !== 1) {
       throw new ConflictException('This order can no longer be cancelled');
@@ -689,6 +739,8 @@ export class OrdersService {
 
     // Same contact resolution as checkout: the account when there is one,
     // otherwise what the guest gave us at the till.
+    await this.notificationsService.enqueueOrderEvent(order, 'order.cancelled');
+
     const owner = order.user ? await this.userModel.findById(order.user) : null;
     const contactEmail = owner?.email ?? order.guestEmail;
     if (contactEmail) {
@@ -716,14 +768,55 @@ export class OrdersService {
       throw new NotFoundException('Order not found');
     }
 
+    // The one step staff take: the order has been seen and accepted. It is
+    // also the last one, so it settles payment the way "delivered" used to —
+    // cash counts as collected, and an InstaPay transfer as checked (the
+    // button asks staff to check the bank app first). A card payment that
+    // never completed cannot be confirmed; that order waits or is cancelled.
+    if (dto.fulfillmentStatus === 'confirmed') {
+      if (!['unfulfilled', 'processing'].includes(order.fulfillmentStatus)) {
+        throw new ConflictException(`This order is already ${order.fulfillmentStatus}`);
+      }
+      if (order.paymentMethod === 'card' && order.paymentStatus !== 'paid') {
+        throw new ConflictException('The card payment never completed, so this order cannot be confirmed');
+      }
+
+      const settles = order.paymentStatus === 'pending';
+      const claimed = await this.orderModel.updateOne(
+        {
+          _id: order._id,
+          fulfillmentStatus: order.fulfillmentStatus,
+          paymentStatus: order.paymentStatus,
+        },
+        {
+          $set: {
+            fulfillmentStatus: 'confirmed',
+            ...(settles ? { paymentStatus: 'paid' } : {}),
+          },
+        }
+      );
+      if (claimed.modifiedCount !== 1) {
+        throw new ConflictException('This order was updated by someone else — please retry');
+      }
+
+      return {
+        success: true,
+        message: 'Order confirmed',
+        data: await this.orderModel.findById(order._id),
+      };
+    }
+
     if (dto.fulfillmentStatus === 'shipped') {
       if (!['unfulfilled', 'processing'].includes(order.fulfillmentStatus)) {
         throw new ConflictException(`Cannot mark a ${order.fulfillmentStatus} order as shipped`);
       }
-      // Cash-on-delivery ships unpaid by design (the courier collects
-      // payment on delivery) — only a card order must actually be paid first.
-      if (order.paymentMethod === 'card' && order.paymentStatus !== 'paid') {
-        throw new ConflictException('Cannot ship an unpaid card order');
+      // Cash-on-delivery ships unpaid by design (the rider collects payment
+      // at the door). Every other method is meant to be settled before the
+      // food leaves, so an unpaid one must not go out.
+      if (order.paymentMethod !== 'cod' && order.paymentStatus !== 'paid') {
+        throw new ConflictException(
+          `Cannot send out an unpaid ${order.paymentMethod} order`
+        );
       }
 
       const claimed = await this.orderModel.updateOne(
@@ -733,7 +826,7 @@ export class OrdersService {
             fulfillmentStatus: 'shipped',
             ...(dto.trackingNumber ? { trackingNumber: dto.trackingNumber } : {}),
           },
-        },
+        }
       );
       if (claimed.modifiedCount !== 1) {
         throw new ConflictException('This order was updated by someone else — please retry');
@@ -742,7 +835,11 @@ export class OrdersService {
       const user = await this.userModel.findById(order.user);
       const updated = await this.orderModel.findById(order._id);
       if (user && updated) {
-        this.eventEmitter.emit('order.shipped', { email: user.email, firstName: user.firstName, order: updated });
+        this.eventEmitter.emit('order.shipped', {
+          email: user.email,
+          firstName: user.firstName,
+          order: updated,
+        });
       }
       return { success: true, message: 'Order marked as shipped', data: updated };
     }
@@ -763,7 +860,7 @@ export class OrdersService {
             ...(settlesCod ? { paymentStatus: 'paid' } : {}),
             ...(dto.trackingNumber ? { trackingNumber: dto.trackingNumber } : {}),
           },
-        },
+        }
       );
       if (claimed.modifiedCount !== 1) {
         throw new ConflictException('This order was updated by someone else — please retry');
@@ -772,9 +869,43 @@ export class OrdersService {
       const user = await this.userModel.findById(order.user);
       const updated = await this.orderModel.findById(order._id);
       if (user && updated) {
-        this.eventEmitter.emit('order.delivered', { email: user.email, firstName: user.firstName, order: updated });
+        this.eventEmitter.emit('order.delivered', {
+          email: user.email,
+          firstName: user.firstName,
+          order: updated,
+        });
       }
       return { success: true, message: 'Order marked as delivered', data: updated };
+    }
+
+    if (dto.paymentStatus === 'paid') {
+      // Only InstaPay is settled by hand. A card order is marked paid by the
+      // provider webhook and a COD order on delivery, so allowing either to
+      // be flipped here would let staff bypass the real confirmation.
+      if (order.paymentMethod !== 'instapay') {
+        throw new ConflictException(
+          'Only an InstaPay order is confirmed manually'
+        );
+      }
+      if (order.paymentStatus !== 'pending') {
+        throw new ConflictException(`This order is already ${order.paymentStatus}`);
+      }
+
+      const claimed = await this.orderModel.updateOne(
+        { _id: order._id, paymentStatus: 'pending' },
+        // The transfer has landed, so the kitchen can pick it up — same
+        // starting point a COD order gets at checkout.
+        { $set: { paymentStatus: 'paid', fulfillmentStatus: 'processing' } }
+      );
+      if (claimed.modifiedCount !== 1) {
+        throw new ConflictException('This order was updated by someone else — please retry');
+      }
+
+      return {
+        success: true,
+        message: 'InstaPay transfer confirmed',
+        data: await this.orderModel.findById(order._id),
+      };
     }
 
     if (dto.paymentStatus === 'refunded') {
@@ -787,7 +918,7 @@ export class OrdersService {
       // stockReserved is left exactly as it is.
       const claimed = await this.orderModel.updateOne(
         { _id: order._id, paymentStatus: 'paid' },
-        { $set: { paymentStatus: 'refunded' } },
+        { $set: { paymentStatus: 'refunded' } }
       );
       if (claimed.modifiedCount !== 1) {
         throw new ConflictException('This order was updated by someone else — please retry');
@@ -796,7 +927,11 @@ export class OrdersService {
       const user = await this.userModel.findById(order.user);
       const updated = await this.orderModel.findById(order._id);
       if (user && updated) {
-        this.eventEmitter.emit('order.refunded', { email: user.email, firstName: user.firstName, order: updated });
+        this.eventEmitter.emit('order.refunded', {
+          email: user.email,
+          firstName: user.firstName,
+          order: updated,
+        });
       }
       return { success: true, message: 'Order marked as refunded', data: updated };
     }
@@ -811,7 +946,7 @@ export class OrdersService {
   // order read proves it, rather than assuming a session.
   async getPaymentStatus(
     viewer: { userId?: string | null; guestAccessToken?: string | null },
-    orderNumber: string,
+    orderNumber: string
   ) {
     const { data: order } = await this.findOneForViewer(orderNumber, viewer);
 
@@ -847,7 +982,21 @@ export class OrdersService {
   async findAllAdmin(query: AdminOrderQueryDto) {
     const filter: FilterQuery<OrderDocument> = {};
     if (query.paymentStatus) filter.paymentStatus = query.paymentStatus;
-    if (query.fulfillmentStatus) filter.fulfillmentStatus = query.fulfillmentStatus;
+    if (query.fulfillmentStatus?.length) {
+      filter.fulfillmentStatus = { $in: query.fulfillmentStatus };
+    }
+    if (query.q) {
+      // Escaped: a customer's name or an order number is user input, and an
+      // unescaped '(' would take the whole query down.
+      const term = new RegExp(query.q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      filter.$or = [
+        { orderNumber: term },
+        { 'shippingAddress.firstName': term },
+        { 'shippingAddress.lastName': term },
+        { 'shippingAddress.phone': term },
+        { guestEmail: term },
+      ];
+    }
 
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
@@ -856,7 +1005,13 @@ export class OrdersService {
     const [items, total] = await Promise.all([
       this.orderModel
         .find(filter)
-        .select('orderNumber user items total currency paymentMethod paymentStatus fulfillmentStatus trackingNumber createdAt')
+        // shippingAddress and guestEmail are the point of this screen: most
+        // restaurant orders are placed by guests, so without them every row
+        // showed a dash where the customer's name and phone should be.
+        .select(
+          'orderNumber user guestEmail shippingAddress items total currency ' +
+            'paymentMethod paymentStatus paymentReference fulfillmentStatus trackingNumber createdAt'
+        )
         .populate('user', 'firstName lastName email')
         .sort({ createdAt: -1 })
         .skip(skip)
@@ -875,7 +1030,9 @@ export class OrdersService {
   // Same record findOneForViewer returns, but not ownership-scoped — for the
   // admin order detail view.
   async findOneAdmin(orderNumber: string) {
-    const order = await this.orderModel.findOne({ orderNumber }).populate('user', 'firstName lastName email');
+    const order = await this.orderModel
+      .findOne({ orderNumber })
+      .populate('user', 'firstName lastName email');
     if (!order) {
       throw new NotFoundException('Order not found');
     }

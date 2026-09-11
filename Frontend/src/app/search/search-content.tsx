@@ -6,7 +6,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Search as SearchIcon } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { ProductBrowser } from "@/components/products/product-browser";
+import { MenuSearchResults } from "@/components/menu/menu-search-results";
 import { getSuggestions } from "@/lib/api/products";
 import { formatPrice } from "@/lib/format";
 
@@ -66,8 +66,8 @@ export function SearchContent() {
 
   return (
     <div>
-      <section className="border-b border-border bg-background py-16 text-center md:py-20">
-        <div ref={containerRef} className="relative mx-auto flex max-w-lg items-center gap-3 px-margin-mobile">
+      <section className="border-b border-border bg-background py-12 text-center md:py-16">
+        <div ref={containerRef} className="relative mx-auto flex max-w-lg items-center gap-3 px-4 sm:px-6">
           <SearchIcon className="size-5 shrink-0 text-muted-foreground" strokeWidth={1.5} />
           <input
             ref={inputRef}
@@ -77,10 +77,10 @@ export function SearchContent() {
               setSuggestionsOpen(true);
             }}
             onFocus={() => setSuggestionsOpen(true)}
-            placeholder="Search for t-shirts, pants, jackets…"
-            aria-label="Search products"
+            placeholder="Search burgers, fries, drinks…"
+            aria-label="Search the menu"
             autoComplete="off"
-            className="w-full border-b border-border bg-transparent pb-3 text-center font-heading text-headline-sm font-bold text-foreground outline-none placeholder:text-muted-foreground placeholder:font-normal focus:border-foreground"
+            className="w-full border-b border-border bg-transparent pb-3 text-center font-heading text-2xl font-black text-foreground outline-none placeholder:text-muted-foreground placeholder:font-normal focus:border-foreground"
           />
 
           {showDropdown && (
@@ -88,11 +88,11 @@ export function SearchContent() {
               {suggestions!.map((s) => (
                 <Link
                   key={s._id}
-                  href={`/products/${s.slug}`}
+                  href={`/menu/${s.slug}`}
                   onClick={() => setSuggestionsOpen(false)}
                   className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-b-0 hover:bg-muted"
                 >
-                  <div className="relative aspect-3/4 w-10 shrink-0 bg-muted">
+                  <div className="relative size-11 shrink-0 overflow-hidden rounded-lg bg-muted">
                     {s.images[0] && <Image src={s.images[0]} alt="" fill className="object-cover" sizes="40px" />}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -106,12 +106,12 @@ export function SearchContent() {
         </div>
       </section>
 
-      <div className="mx-auto w-full max-w-(--spacing-container-max) px-margin-mobile py-stack-xl md:px-margin-desktop">
+      <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6">
         {debouncedTerm ? (
-          <ProductBrowser q={debouncedTerm} />
+          <MenuSearchResults q={debouncedTerm} />
         ) : (
-          <p className="py-24 text-center text-body-lg text-muted-foreground">
-            Start typing to search our collection.
+          <p className="py-24 text-center text-lg text-muted-foreground">
+            Start typing to search the menu.
           </p>
         )}
       </div>

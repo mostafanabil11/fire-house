@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { RESTAURANT } from "@/config/restaurant";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy — Valiant",
-  description: "How Valiant collects, uses, and protects your personal information.",
+  title: `Privacy Policy — ${RESTAURANT.name}`,
+  description: `How ${RESTAURANT.name} collects, uses, and protects your personal information.`,
 };
 
 export default function PrivacyPage() {
@@ -21,7 +22,7 @@ export default function PrivacyPage() {
             <p>
               When you create an account, we collect your name, email address, and password (stored as a
               one-way hash — we never see or store it in plain text). When you place an order, we also collect
-              the shipping address and phone number you provide. If you sign in with Google, we receive your
+              the delivery address and phone number you provide. If you sign in with Google, we receive your
               name and email from your Google account instead of a password.
             </p>
           </section>
@@ -29,7 +30,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className="mb-3 font-heading text-headline-sm font-bold text-foreground">How We Use It</h2>
             <p>
-              Your information is used to process and ship orders, send order confirmations and shipping
+              Your information is used to prepare and deliver orders, send order confirmations and status
               updates, keep your account signed in securely, and apply coupons you choose to redeem. We do not
               sell your personal information to third parties.
             </p>
@@ -39,7 +40,7 @@ export default function PrivacyPage() {
             <h2 className="mb-3 font-heading text-headline-sm font-bold text-foreground">Payment Information</h2>
             <p>
               Card payments are processed by Paymob, our payment provider. Your card number and details are
-              entered directly into Paymob&apos;s secure payment form — Valiant&apos;s servers never receive or
+              entered directly into Paymob&apos;s secure payment form — our servers never receive or
               store your full card number.
             </p>
           </section>
@@ -72,11 +73,8 @@ export default function PrivacyPage() {
           <section>
             <h2 className="mb-3 font-heading text-headline-sm font-bold text-foreground">Contact</h2>
             <p>
-              Questions about this policy can be sent to{" "}
-              <a href="mailto:support@valiant.com" className="text-foreground underline">
-                support@valiant.com
-              </a>
-              .
+              Questions about this policy can be sent through our{" "}
+              <Link href="/contact" className="text-foreground underline">contact page</Link>.
             </p>
           </section>
         </div>

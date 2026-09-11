@@ -44,7 +44,9 @@ export class EmailService {
 
   private announce() {
     if (this.transport === 'brevo') {
-      this.logger.log(`Email transport: Brevo HTTP API, sending as ${this.configService.mailFromAddress}`);
+      this.logger.log(
+        `Email transport: Brevo HTTP API, sending as ${this.configService.mailFromAddress}`
+      );
       return;
     }
 
@@ -74,19 +76,21 @@ export class EmailService {
       // not worth delaying boot for.
       void this.smtpTransporter
         .verify()
-        .then(() => this.logger.log('Email transport: SMTP verified, order emails will be delivered'))
+        .then(() =>
+          this.logger.log('Email transport: SMTP verified, order emails will be delivered')
+        )
         .catch((err: Error) =>
           this.logger.error(
             `Email transport: SMTP verification FAILED, nothing will be delivered — ${err.message}. ` +
-              'If this host blocks SMTP ports, set BREVO_API_KEY to send over HTTPS instead.',
-          ),
+              'If this host blocks SMTP ports, set BREVO_API_KEY to send over HTTPS instead.'
+          )
         );
       return;
     }
 
     this.logger.warn(
       'No email transport configured (set BREVO_API_KEY, or EMAIL_USER + EMAIL_PASSWORD) — ' +
-        'order confirmations, OTPs and password resets will NOT be delivered.',
+        'order confirmations, OTPs and password resets will NOT be delivered.'
     );
   }
 
@@ -162,13 +166,20 @@ export class EmailService {
       // sender address is the usual one, and worth surfacing verbatim rather
       // than reporting a bare status code.
       const detail = await response.text().catch(() => '');
-      throw new Error(`Brevo responded ${response.status}${detail ? ` — ${detail.slice(0, 300)}` : ''}`);
+      throw new Error(
+        `Brevo responded ${response.status}${detail ? ` — ${detail.slice(0, 300)}` : ''}`
+      );
     }
   }
 
   // --- Account ---
 
-  async sendOtpEmail(email: string, userName: string, otp: string, htmlTemplate: string): Promise<boolean> {
+  async sendOtpEmail(
+    email: string,
+    userName: string,
+    otp: string,
+    htmlTemplate: string
+  ): Promise<boolean> {
     const sent = await this.deliver({
       to: email,
       subject: 'Email Verification - OTP',
@@ -186,7 +197,7 @@ export class EmailService {
   async sendWelcomeEmail(email: string, userName: string, htmlTemplate: string): Promise<boolean> {
     return this.deliver({
       to: email,
-      subject: 'Welcome to Valiant',
+      subject: 'Welcome to Fire House',
       html: htmlTemplate,
       context: 'Welcome',
     });
@@ -196,7 +207,7 @@ export class EmailService {
     email: string,
     userName: string,
     htmlTemplate: string,
-    resetUrl?: string,
+    resetUrl?: string
   ): Promise<boolean> {
     const sent = await this.deliver({
       to: email,
@@ -216,7 +227,7 @@ export class EmailService {
     email: string,
     userName: string,
     orderNumber: string,
-    htmlTemplate: string,
+    htmlTemplate: string
   ): Promise<boolean> {
     return this.deliver({
       to: email,
@@ -226,7 +237,11 @@ export class EmailService {
     });
   }
 
-  async sendOrderShippedEmail(email: string, orderNumber: string, htmlTemplate: string): Promise<boolean> {
+  async sendOrderShippedEmail(
+    email: string,
+    orderNumber: string,
+    htmlTemplate: string
+  ): Promise<boolean> {
     return this.deliver({
       to: email,
       subject: `Your Order Has Shipped — ${orderNumber}`,
@@ -235,7 +250,11 @@ export class EmailService {
     });
   }
 
-  async sendOrderDeliveredEmail(email: string, orderNumber: string, htmlTemplate: string): Promise<boolean> {
+  async sendOrderDeliveredEmail(
+    email: string,
+    orderNumber: string,
+    htmlTemplate: string
+  ): Promise<boolean> {
     return this.deliver({
       to: email,
       subject: `Delivered — ${orderNumber}`,
@@ -244,7 +263,11 @@ export class EmailService {
     });
   }
 
-  async sendOrderRefundedEmail(email: string, orderNumber: string, htmlTemplate: string): Promise<boolean> {
+  async sendOrderRefundedEmail(
+    email: string,
+    orderNumber: string,
+    htmlTemplate: string
+  ): Promise<boolean> {
     return this.deliver({
       to: email,
       subject: `Refund Processed — ${orderNumber}`,
@@ -253,7 +276,11 @@ export class EmailService {
     });
   }
 
-  async sendOrderCancelledEmail(email: string, orderNumber: string, htmlTemplate: string): Promise<boolean> {
+  async sendOrderCancelledEmail(
+    email: string,
+    orderNumber: string,
+    htmlTemplate: string
+  ): Promise<boolean> {
     return this.deliver({
       to: email,
       subject: `Order Cancelled — ${orderNumber}`,
@@ -264,7 +291,11 @@ export class EmailService {
 
   // --- Marketing ---
 
-  async sendBackInStockEmail(email: string, productName: string, htmlTemplate: string): Promise<boolean> {
+  async sendBackInStockEmail(
+    email: string,
+    productName: string,
+    htmlTemplate: string
+  ): Promise<boolean> {
     return this.deliver({
       to: email,
       subject: `Back in Stock — ${productName}`,

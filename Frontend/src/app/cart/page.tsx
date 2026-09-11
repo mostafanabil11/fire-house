@@ -2,32 +2,36 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Minus, Plus, X } from "lucide-react";
+import { Minus, Plus, UtensilsCrossed, X } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
 import { useAppliedCoupon } from "@/hooks/use-applied-coupon";
 import { formatPrice } from "@/lib/format";
 import { CartChangedBanner } from "@/components/products/cart-changed-banner";
 import { CouponField } from "@/components/checkout/coupon-field";
+import { CartLineDetails } from "@/components/menu/cart-line-details";
 
 export default function CartPage() {
-  const { cart, isLoading, isAuthenticated, updateQuantity, removeItem } = useCart();
+  const { cart, isLoading, isAuthenticated, setQuantity, removeItem } = useCart();
   const { coupon } = useAppliedCoupon();
   const items = cart.items;
 
   if (!isLoading && items.length === 0) {
     return (
-      <div className="mx-auto flex w-full max-w-(--spacing-container-max) flex-col items-center px-margin-mobile py-stack-xl text-center md:px-margin-desktop">
-        <h1 className="mb-4 font-heading text-headline-md font-bold text-foreground">
-          Your Bag is Empty
+      <div className="mx-auto flex w-full max-w-2xl flex-col items-center px-4 py-20 text-center sm:px-6">
+        <div className="grid size-16 place-items-center rounded-full bg-muted text-muted-foreground">
+          <UtensilsCrossed className="size-7" strokeWidth={1.5} aria-hidden />
+        </div>
+        <h1 className="mt-6 font-heading text-3xl font-black tracking-[-0.035em]">
+          Your order is empty
         </h1>
-        <p className="mb-8 text-body-md text-muted-foreground">
-          Explore the collection and find something you love.
+        <p className="mt-3 text-base text-muted-foreground">
+          Browse the menu and pick something you feel like eating.
         </p>
         <Link
-          href="/"
-          className="bg-primary px-8 py-4 text-button font-medium tracking-[0.05em] text-primary-foreground uppercase transition-colors hover:bg-primary/90"
+          href="/menu"
+          className="mt-8 inline-flex min-h-12 items-center rounded-full bg-primary px-8 text-sm font-black text-primary-foreground transition-transform hover:-translate-y-0.5"
         >
-          Continue Shopping
+          View the menu
         </Link>
       </div>
     );
@@ -36,128 +40,147 @@ export default function CartPage() {
   const hasUnavailable = items.some((i) => !i.available);
   // Mirrors the backend's own checkout gate exactly (see OrdersService.checkout)
   // — hasChanges stays true until the stored quantity is corrected via
-  // updateQuantity below, so a clamped-but-still-"available" line still
-  // blocks checkout rather than clicking through to a guaranteed 409.
+  // setQuantity below, so a clamped-but-still-"available" line still blocks
+  // checkout rather than clicking through to a guaranteed 409.
   const canCheckout = !isLoading && items.length > 0 && !hasUnavailable && !cart.hasChanges;
 
   return (
-    <div className="mx-auto w-full max-w-(--spacing-container-max) px-margin-mobile py-stack-xl md:px-margin-desktop">
-      <h1 className="mb-12 font-heading text-headline-sm font-bold text-foreground md:text-headline-md">
-        Shopping Bag
-      </h1>
+    <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-12">
+      <h1 className="font-heading text-3xl font-black tracking-[-0.04em] sm:text-4xl">Your order</h1>
 
-      <CartChangedBanner items={items} />
+      <div className="mt-6">
+        <CartChangedBanner items={items} />
+      </div>
 
-      <div className="grid grid-cols-1 gap-gutter md:grid-cols-3">
-        {/* Items */}
-        <div className="md:col-span-2">
-          <div className="divide-y divide-border border-t border-b border-border">
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <ul className="grid gap-3">
             {items.map((item) => (
-              <div
-                key={`${item.productId}-${item.size}`}
-                className={`flex gap-6 py-6 ${!item.available ? "opacity-50" : ""}`}
+              <li
+                key={item.key}
+                className={`flex gap-4 rounded-[1.5rem] border border-border bg-card p-3 ${
+                  !item.available ? "opacity-60" : ""
+                }`}
               >
                 <Link
-                  href={item.slug ? `/products/${item.slug}` : "#"}
-                  className="relative aspect-3/4 w-24 shrink-0 bg-muted"
+                  href={item.slug ? `/menu/${item.slug}` : "/menu"}
+                  className="relative size-24 shrink-0 overflow-hidden rounded-[1.1rem] bg-muted sm:size-28"
                 >
-                  {item.image && (
-                    <Image src={item.image} alt={item.name ?? ""} fill className="object-cover" sizes="96px" />
+                  {item.image ? (
+                    <Image
+                      src={item.image}
+                      alt={item.name ?? ""}
+                      fill
+                      className="object-cover"
+                      sizes="112px"
+                    />
+                  ) : (
+                    <span className="grid size-full place-items-center text-primary/40">
+                      <UtensilsCrossed className="size-6" strokeWidth={1.5} aria-hidden />
+                    </span>
                   )}
                 </Link>
-                <div className="flex flex-1 flex-col justify-between">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <Link href={item.slug ? `/products/${item.slug}` : "#"}>
-                        <h3 className="text-body-md text-foreground">{item.name ?? "Unavailable item"}</h3>
+
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <Link href={item.slug ? `/menu/${item.slug}` : "/menu"}>
+                        <h2 className="font-heading text-base font-black tracking-tight sm:text-lg">
+                          {item.name ?? "Unavailable dish"}
+                        </h2>
                       </Link>
-                      <p className="mt-1 text-[13px] text-muted-foreground">
-                        {item.color} · Size {item.size}
-                      </p>
-                      {!item.available && (
-                        <p className="mt-1 text-[12px] font-semibold text-destructive uppercase">No longer available</p>
-                      )}
+                      <CartLineDetails line={item} />
                     </div>
                     <button
                       type="button"
-                      onClick={() => removeItem(item.productId, item.size)}
-                      aria-label="Remove item"
-                      className="text-muted-foreground transition-colors hover:text-foreground"
+                      onClick={() => removeItem(item.key)}
+                      aria-label={`Remove ${item.name ?? "item"} from your order`}
+                      className="-mt-1 -mr-1 grid size-11 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     >
-                      <X className="size-4" strokeWidth={1.5} />
+                      <X className="size-4" strokeWidth={2} />
                     </button>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3 border border-border">
+
+                  <div className="mt-auto flex items-center justify-between gap-3 pt-3">
+                    <div className="flex items-center gap-1 rounded-full border border-border p-0.5">
                       <button
                         type="button"
-                        onClick={() => updateQuantity(item.productId, item.size, item.quantity - 1)}
-                        disabled={!item.available}
+                        onClick={() => setQuantity(item.key, item.quantity - 1)}
                         aria-label="Decrease quantity"
-                        className="p-2 text-foreground transition-opacity hover:opacity-70 disabled:opacity-30"
+                        className="grid size-9 place-items-center rounded-full transition-colors hover:bg-muted"
                       >
-                        <Minus className="size-3.5" strokeWidth={1.5} />
+                        <Minus className="size-3.5" strokeWidth={2.5} />
                       </button>
-                      <span className="min-w-4 text-center text-sm">{item.quantity}</span>
+                      <span className="min-w-5 text-center text-sm font-black">{item.quantity}</span>
                       <button
                         type="button"
-                        onClick={() => updateQuantity(item.productId, item.size, item.quantity + 1)}
-                        disabled={!item.available || item.quantity >= item.availableStock}
+                        onClick={() => setQuantity(item.key, item.quantity + 1)}
+                        disabled={
+                          !item.available ||
+                          (item.availableStock !== null && item.quantity >= item.availableStock)
+                        }
                         aria-label="Increase quantity"
-                        className="p-2 text-foreground transition-opacity hover:opacity-70 disabled:opacity-30"
+                        className="grid size-9 place-items-center rounded-full transition-colors hover:bg-muted disabled:opacity-30"
                       >
-                        <Plus className="size-3.5" strokeWidth={1.5} />
+                        <Plus className="size-3.5" strokeWidth={2.5} />
                       </button>
                     </div>
-                    <p className="text-[13px] font-semibold text-foreground">
+                    <p className="font-black">
                       {item.available ? formatPrice(item.lineTotal) : "—"}
                     </p>
                   </div>
                 </div>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
 
-        {/* Summary */}
-        <div className="h-fit bg-muted p-8">
-          <h2 className="mb-6 text-[12px] font-semibold tracking-[0.1em] text-foreground uppercase">
-            Order Summary
-          </h2>
-          <div className="mb-3 flex items-center justify-between text-body-md">
+        <div className="h-fit rounded-[1.5rem] border border-border bg-card p-6 lg:sticky lg:top-28">
+          <h2 className="font-heading text-lg font-black">Order summary</h2>
+
+          <div className="mt-5 flex items-center justify-between text-sm">
             <span className="text-muted-foreground">Subtotal</span>
-            <span className="text-foreground">{formatPrice(cart.subtotal)}</span>
+            <span className="font-bold">{formatPrice(cart.subtotal)}</span>
           </div>
           {coupon && (
-            <div className="mb-3 flex items-center justify-between text-body-md">
+            <div className="mt-2 flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Discount ({coupon.code})</span>
-              <span className="text-foreground">
-                {coupon.freeShipping ? "Free shipping" : `−${formatPrice(coupon.discountAmount)}`}
+              <span className="font-bold">
+                {coupon.freeShipping ? "Free delivery" : `−${formatPrice(coupon.discountAmount)}`}
               </span>
             </div>
           )}
-          <p className="mb-6 text-[12px] text-muted-foreground">
-            Shipping and taxes calculated at checkout.
+          <p className="mt-3 text-xs text-muted-foreground">
+            Delivery fee and total are confirmed at checkout.
           </p>
+
           {/* Shown to guests too — they can hold a coupon just as easily as a
               member. The per-person cap is checked against their email at
               checkout, which is the first point we know one. */}
-          <div className="mb-6">
+          <div className="mt-5">
             <CouponField items={items} isAuthenticated={isAuthenticated} />
           </div>
-          {/* One button for everyone. Checkout takes an email and address
-              inline, so there is nothing to sign in *for* — the option to do
-              so lives on the checkout page itself, next to the email field. */}
+
+          {/* One button for everyone. Checkout takes contact details inline, so
+              there is nothing to sign in *for* — the option to do so lives on
+              the checkout page itself, next to the email field. */}
           <Link
             href="/checkout"
             aria-disabled={!canCheckout}
-            className={`block w-full py-4 text-center text-button font-medium tracking-[0.05em] uppercase transition-colors ${
+            className={`mt-5 flex min-h-13 w-full items-center justify-center rounded-full text-sm font-black transition-transform ${
               canCheckout
-                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                ? "bg-primary text-primary-foreground hover:-translate-y-0.5"
                 : "pointer-events-none bg-primary/40 text-primary-foreground/70"
             }`}
           >
-            Checkout
+            Go to checkout
+          </Link>
+
+          <Link
+            href="/menu"
+            className="mt-3 flex min-h-11 w-full items-center justify-center text-sm font-bold text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Add more items
           </Link>
         </div>
       </div>

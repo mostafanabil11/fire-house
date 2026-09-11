@@ -1,4 +1,4 @@
-# Render blueprint for the Valiant API.
+# Render blueprint for the restaurant ordering API.
 #
 # The frontend is not here: it stays on Vercel. This file describes only the
 # NestJS backend, which needs a host that runs a persistent process — the
@@ -9,7 +9,7 @@
 # are entered in the Render dashboard and never committed. See README.md.
 services:
   - type: web
-    name: valiant-api
+    name: restaurant-ordering-api
     runtime: node
     plan: free
     region: frankfurt
@@ -71,7 +71,7 @@ services:
       - key: MAIL_FROM_ADDRESS
         sync: false
       - key: MAIL_FROM_NAME
-        value: Valiant
+        value: Fire House
       - key: EMAIL_USER
         sync: false
       - key: EMAIL_PASSWORD

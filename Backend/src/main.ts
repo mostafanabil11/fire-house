@@ -47,8 +47,8 @@ async function bootstrap() {
   const isProduction = configService.isProduction;
   if (!isProduction) {
     const config = new DocumentBuilder()
-      .setTitle('Valiant API')
-      .setDescription('The Valiant API description')
+      .setTitle('Restaurant Ordering API')
+      .setDescription('Menu, cart, checkout, and restaurant order management API')
       .setVersion('1.0')
       .addBearerAuth()
       .build();
@@ -72,4 +72,3 @@ async function bootstrap() {
 }
 
 bootstrap();
-

@@ -16,7 +16,7 @@ export class CartScheduler {
   constructor(
     private cartService: CartService,
     private emailService: EmailService,
-    private configService: ConfigService,
+    private configService: ConfigService
   ) {}
 
   @Cron(CronExpression.EVERY_HOUR)
@@ -30,9 +30,13 @@ export class CartScheduler {
         if (!user?.email) continue;
 
         const resolved = await this.cartService.resolveItems(
-          cart.items.map((i) => ({ productId: i.product.toString(), size: i.size, quantity: i.quantity })),
+          cart.items.map(i => ({
+            productId: i.product.toString(),
+            size: i.size,
+            quantity: i.quantity,
+          }))
         );
-        const available = resolved.items.filter((i) => i.available);
+        const available = resolved.items.filter(i => i.available);
         // Nothing left worth recovering (everything sold out or was
         // deactivated since) — mark it sent anyway so the sweep stops
         // re-checking this cart every hour.
@@ -44,8 +48,13 @@ export class CartScheduler {
         const cartUrl = new URL('/cart', this.configService.frontendUrl).toString();
         const template = EmailUtils.generateAbandonedCartEmailTemplate(
           user.firstName ?? 'there',
-          available.map((i) => ({ name: i.name!, color: i.color!, size: i.size, image: i.image })),
-          cartUrl,
+          available.map(i => ({
+            name: i.name!,
+            color: i.color ?? '',
+            size: i.variant?.name ?? i.size ?? '',
+            image: i.image,
+          })),
+          cartUrl
         );
 
         const ok = await this.emailService.sendAbandonedCartEmail(user.email, template);

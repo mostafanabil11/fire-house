@@ -1,15 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { loginUser } from "@/lib/api/auth";
-import { GoogleIcon } from "@/components/icons/social-icons";
-import { API_BASE_PATH } from "@/lib/api/client";
 import { mergeLocalCartIntoServerCart } from "@/lib/cart-merge";
+import { AuthShell } from "@/components/auth/auth-shell";
+import {
+  AuthField,
+  AuthPasswordField,
+  AuthSubmitButton,
+  AuthDivider,
+  GoogleAuthButton,
+} from "@/components/auth/auth-form";
 
 // Only same-origin paths are honoured. Taking ?next= at face value would let a
 // crafted link bounce someone to another site immediately after they sign in,
@@ -28,6 +33,9 @@ export function LoginContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const next = searchParams.get("next");
+  const cameFromCheckout = next?.startsWith("/checkout");
+
   const { mutate, isPending } = useMutation({
     mutationFn: loginUser,
     onSuccess: async (user) => {
@@ -36,11 +44,13 @@ export function LoginContent() {
       queryClient.invalidateQueries({ queryKey: ["cart", "server"] });
       toast.success(`Welcome back, ${user.firstName}`);
       // Back to wherever the customer was — signing in from checkout must
-      // return to checkout, not abandon the basket they were about to pay for.
-      router.push(safeNextPath(searchParams.get("next")));
+      // return to checkout, not abandon the order they were about to place.
+      router.push(safeNextPath(next));
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.message ?? "Invalid email or password");
+    onError: (err: unknown) => {
+      const message = (err as { response?: { data?: { message?: string } } })?.response?.data
+        ?.message;
+      toast.error(message ?? "Invalid email or password");
     },
   });
 
@@ -50,109 +60,76 @@ export function LoginContent() {
   }
 
   return (
-    <div className="grid min-h-[600px] grid-cols-1 md:grid-cols-2">
-      {/* Photo */}
-      <div className="relative hidden aspect-3/4 md:block">
-        <Image
-          src="/images/home/hero.jpg"
-          alt="Valiant"
-          fill
-          className="object-cover"
-          sizes="50vw"
-          loading="eager"
-          fetchPriority="high"
-        />
-      </div>
-
-      {/* Form */}
-      <div className="flex flex-col items-center justify-center px-margin-mobile py-stack-xl md:px-margin-desktop">
-        <div className="w-full max-w-sm">
+    <AuthShell
+      title="Welcome back"
+      subtitle={
+        cameFromCheckout
+          ? "Sign in to use your saved addresses — your order is waiting."
+          : "Sign in to reorder your favourites and track your delivery."
+      }
+      footer={
+        <p className="text-center text-sm text-muted-foreground">
+          New here?{" "}
           <Link
-            href="/"
-            className="mb-10 block text-center font-sans text-2xl font-bold tracking-[0.25em] text-foreground"
+            href={next ? `/signup?next=${encodeURIComponent(next)}` : "/signup"}
+            className="font-bold text-primary hover:underline"
           >
-            VALIANT
+            Create an account
           </Link>
+        </p>
+      }
+    >
+      <form onSubmit={handleSubmit} className="grid gap-4">
+        <AuthField
+          label="Email"
+          id="email"
+          type="email"
+          inputMode="email"
+          required
+          autoComplete="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={isPending}
+        />
 
-          <h1 className="mb-2 text-center font-heading text-headline-sm font-bold text-foreground">
-            Welcome Back
-          </h1>
-          <p className="mb-8 text-center text-body-md text-muted-foreground">
-            Sign in to access your account.
-          </p>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label
-                htmlFor="email"
-                className="mb-2 block text-[12px] font-semibold tracking-[0.1em] text-foreground uppercase"
-              >
-                Email Address
-              </label>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-foreground"
-              />
-            </div>
-
-            <div>
-              <div className="mb-2 flex items-center justify-between">
-                <label
-                  htmlFor="password"
-                  className="text-[12px] font-semibold tracking-[0.1em] text-foreground uppercase"
-                >
-                  Password
-                </label>
-                <Link href="/forgot-password" className="text-[12px] text-muted-foreground hover:text-foreground">
-                  Forgot password?
-                </Link>
-              </div>
-              <input
-                id="password"
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-foreground"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isPending}
-              className="w-full bg-primary py-4 text-button font-medium tracking-[0.05em] text-primary-foreground uppercase transition-colors hover:bg-primary/90 disabled:opacity-50"
+        <AuthPasswordField
+          label="Password"
+          id="password"
+          required
+          minLength={6}
+          autoComplete="current-password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={isPending}
+          action={
+            <Link
+              href="/forgot-password"
+              className="text-sm font-bold text-primary hover:underline"
             >
-              {isPending ? "Signing In…" : "Sign In"}
-            </button>
-          </form>
-
-          <div className="my-6 flex items-center gap-4">
-            <div className="h-px flex-1 bg-border" />
-            <span className="text-[12px] text-muted-foreground uppercase">Or</span>
-            <div className="h-px flex-1 bg-border" />
-          </div>
-
-          <a
-            href={`${API_BASE_PATH}/auth/google`}
-            className="flex w-full items-center justify-center gap-3 border border-border py-3 text-sm font-medium text-foreground transition-colors hover:bg-muted"
-          >
-            <GoogleIcon className="size-4" />
-            Continue with Google
-          </a>
-
-          <p className="mt-8 text-center text-[13px] text-muted-foreground">
-            Don&apos;t have an account?{" "}
-            <Link href="/signup" className="font-semibold text-foreground underline">
-              Sign up
+              Forgot?
             </Link>
-          </p>
-        </div>
-      </div>
-    </div>
+          }
+        />
+
+        <AuthSubmitButton pending={isPending} pendingLabel="Signing in…">
+          Sign in
+        </AuthSubmitButton>
+      </form>
+
+      <AuthDivider />
+
+      <GoogleAuthButton label="Continue with Google" />
+
+      {/* Ordering never required an account, and saying so here stops the
+          login page reading as a wall in front of the food. */}
+      <p className="mt-6 text-center text-sm text-muted-foreground">
+        You can also{" "}
+        <Link href="/menu" className="font-bold text-foreground hover:underline">
+          order as a guest
+        </Link>{" "}
+        — no account needed.
+      </p>
+    </AuthShell>
   );
 }

@@ -24,6 +24,13 @@ export class Settings {
   @Prop({ default: 5000, min: 0 })
   flatShippingRateMinorUnits: number = 5000;
 
+  // The restaurant's InstaPay handle or mobile wallet number, shown to the
+  // customer so they know where to send the transfer. Public by design — it
+  // is a payee address, the same thing printed on a receipt. Empty disables
+  // InstaPay as a checkout option.
+  @Prop({ default: '', trim: true })
+  instapayAddress: string = '';
+
   createdAt?: Date;
   updatedAt?: Date;
 }

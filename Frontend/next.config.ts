@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 // Where the API really lives. Server Components talk to it directly (no browser
 // involved, so no cookie or CORS question), and the rewrite below points at it.
-const API_ORIGIN = process.env.API_ORIGIN ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000";
+const API_ORIGIN = process.env.API_ORIGIN ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3100";
 
 const nextConfig: NextConfig = {
   // Next 16 serves /_next/* dev resources only to the origin the dev server
@@ -15,7 +15,7 @@ const nextConfig: NextConfig = {
   // No remotePatterns and no dangerouslyAllowLocalIP: product and category
   // images are stored as root-relative paths and served by this app out of
   // public/, so the optimizer never makes an outbound request. Both settings
-  // existed only to permit fetching from http://localhost:3001, which is what
+  // existed only to permit fetching from http://localhost:3101, which is what
   // the database used to store — and which resolved, in production, to the
   // visitor's own machine.
   //
@@ -34,6 +34,19 @@ const nextConfig: NextConfig = {
   //
   // Proxying through /api/backend makes the cookie first-party — same origin as
   // the page — which no browser has any reason to drop.
+  // The storefront this project grew out of shelved things under /products
+  // and hung menu sections off the site root. A restaurant has one menu, so
+  // both now live under /menu — these keep any link that was already shared
+  // (or indexed) working instead of turning it into a 404.
+  async redirects() {
+    return [
+      { source: "/products", destination: "/menu", permanent: true },
+      { source: "/products/:slug", destination: "/menu/:slug", permanent: true },
+      { source: "/sale", destination: "/menu", permanent: true },
+      { source: "/size-guide", destination: "/menu", permanent: true },
+    ];
+  },
+
   async rewrites() {
     return [
       {

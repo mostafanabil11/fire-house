@@ -27,12 +27,14 @@ import { CommonModule } from './common/common.module';
 import { ReviewsModule } from './reviews/reviews.module';
 import { WishlistModule } from './wishlist/wishlist.module';
 import { NewsletterModule } from './newsletter/newsletter.module';
+import { NotificationsModule } from './notifications/notifications.module';
 import { BackInStockModule } from './back-in-stock/back-in-stock.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: ['.env.local', '.env'],
       validate: validateEnv,
     }),
     EventEmitterModule.forRoot(),
@@ -41,11 +43,13 @@ import { BackInStockModule } from './back-in-stock/back-in-stock.module';
     // tier via @Throttle — see auth.controller.ts (5/min on login, register,
     // OTP, password reset) and products/categories controllers' public GET
     // handlers (120/min for normal catalog browsing).
-    ThrottlerModule.forRoot([{
-      name: 'default',
-      ttl: 60000,
-      limit: 60,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        name: 'default',
+        ttl: 60000,
+        limit: 60,
+      },
+    ]),
     MongooseModule.forRootAsync({
       imports: [MyConfigModule],
       inject: [ConfigService],
@@ -69,6 +73,7 @@ import { BackInStockModule } from './back-in-stock/back-in-stock.module';
     WishlistModule,
     NewsletterModule,
     BackInStockModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [

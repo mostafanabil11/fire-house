@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useMutation } from "@tanstack/react-query";
+import { MailCheck } from "lucide-react";
 import { forgotPassword } from "@/lib/api/auth";
+import { AuthShell } from "@/components/auth/auth-shell";
+import { AuthField, AuthSubmitButton } from "@/components/auth/auth-form";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -19,96 +21,76 @@ export default function ForgotPasswordPage() {
     onError: () => setSubmitted(true),
   });
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    mutation.mutate();
+  if (submitted) {
+    return (
+      <AuthShell
+        title="Check your email"
+        subtitle={`If an account exists for ${email}, we've sent a link to reset your password. It expires in an hour.`}
+      >
+        <div className="mb-6 flex items-center gap-3 rounded-2xl border border-border bg-card p-4">
+          <span className="grid size-10 shrink-0 place-items-center rounded-full bg-accent text-accent-foreground">
+            <MailCheck className="size-5" strokeWidth={2.25} aria-hidden />
+          </span>
+          <p className="text-sm text-muted-foreground">
+            Nothing after a few minutes? Check your spam folder, or try again.
+          </p>
+        </div>
+
+        <Link
+          href="/login"
+          className="flex min-h-13 w-full items-center justify-center rounded-full bg-primary text-sm font-black text-primary-foreground transition-transform hover:-translate-y-0.5"
+        >
+          Back to sign in
+        </Link>
+
+        <button
+          type="button"
+          onClick={() => setSubmitted(false)}
+          className="mt-3 flex min-h-11 w-full items-center justify-center text-sm font-bold text-muted-foreground hover:text-foreground"
+        >
+          Use a different email
+        </button>
+      </AuthShell>
+    );
   }
 
   return (
-    <div className="grid min-h-[600px] grid-cols-1 md:grid-cols-2">
-      <div className="relative hidden aspect-3/4 md:block">
-        <Image
-          src="/images/home/hero.jpg"
-          alt="Valiant"
-          fill
-          className="object-cover"
-          sizes="50vw"
-          loading="eager"
-          fetchPriority="high"
-        />
-      </div>
-
-      <div className="flex flex-col items-center justify-center px-margin-mobile py-stack-xl md:px-margin-desktop">
-        <div className="w-full max-w-sm">
-          <Link
-            href="/"
-            className="mb-10 block text-center font-sans text-2xl font-bold tracking-[0.25em] text-foreground"
-          >
-            VALIANT
+    <AuthShell
+      title="Forgot your password?"
+      subtitle="Enter your email and we'll send you a link to set a new one."
+      footer={
+        <p className="text-center text-sm text-muted-foreground">
+          Remembered it?{" "}
+          <Link href="/login" className="font-bold text-primary hover:underline">
+            Back to sign in
           </Link>
+        </p>
+      }
+    >
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          mutation.mutate();
+        }}
+        className="grid gap-4"
+      >
+        <AuthField
+          label="Email"
+          id="email"
+          type="email"
+          inputMode="email"
+          required
+          autoComplete="email"
+          placeholder="you@example.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={mutation.isPending}
+        />
 
-          {submitted ? (
-            <>
-              <h1 className="mb-2 text-center font-heading text-headline-sm font-bold text-foreground">
-                Check Your Email
-              </h1>
-              <p className="mb-8 text-center text-body-md text-muted-foreground">
-                If an account exists for <span className="text-foreground">{email}</span>, we&apos;ve sent a link to
-                reset your password. It expires in 1 hour.
-              </p>
-              <Link
-                href="/login"
-                className="block w-full bg-primary py-4 text-center text-button font-medium tracking-[0.05em] text-primary-foreground uppercase transition-colors hover:bg-primary/90"
-              >
-                Back to Sign In
-              </Link>
-            </>
-          ) : (
-            <>
-              <h1 className="mb-2 text-center font-heading text-headline-sm font-bold text-foreground">
-                Forgot Password?
-              </h1>
-              <p className="mb-8 text-center text-body-md text-muted-foreground">
-                Enter your email and we&apos;ll send you a link to reset it.
-              </p>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="mb-2 block text-[12px] font-semibold tracking-[0.1em] text-foreground uppercase"
-                  >
-                    Email Address
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-foreground"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={mutation.isPending}
-                  className="w-full bg-primary py-4 text-button font-medium tracking-[0.05em] text-primary-foreground uppercase transition-colors hover:bg-primary/90 disabled:opacity-50"
-                >
-                  {mutation.isPending ? "Sending…" : "Send Reset Link"}
-                </button>
-              </form>
-
-              <p className="mt-8 text-center text-[13px] text-muted-foreground">
-                Remembered it?{" "}
-                <Link href="/login" className="font-semibold text-foreground underline">
-                  Back to sign in
-                </Link>
-              </p>
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+        <AuthSubmitButton pending={mutation.isPending} pendingLabel="Sending…">
+          Send reset link
+        </AuthSubmitButton>
+      </form>
+    </AuthShell>
   );
 }

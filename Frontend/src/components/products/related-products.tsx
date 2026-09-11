@@ -11,7 +11,7 @@ export function RelatedProducts({ products }: { products: RelatedProduct[] }) {
       <h2 className="mb-8 font-heading text-headline-sm font-bold text-foreground">You Might Also Like</h2>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
         {products.map((product) => (
-          <Link key={product._id} href={`/products/${product.slug}`} className="group">
+          <Link key={product._id} href={`/menu/${product.slug}`} className="group">
             <div className="relative mb-3 aspect-3/4 overflow-hidden bg-muted">
               {product.images[0] && (
                 <Image

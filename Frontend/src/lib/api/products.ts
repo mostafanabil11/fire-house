@@ -15,11 +15,6 @@ interface ApiListEnvelope<T> {
   pagination: Pagination;
 }
 
-export async function getBestSellers(): Promise<Product[]> {
-  const res = await apiClient.get<ApiEnvelope<Product[]>>("/products/best-sellers");
-  return res.data.data;
-}
-
 export async function getProducts(
   params: ProductListParams = {},
 ): Promise<{ items: Product[]; pagination: Pagination }> {
@@ -43,11 +38,6 @@ export interface ProductSuggestion {
 
 export async function getSuggestions(q: string): Promise<ProductSuggestion[]> {
   const res = await apiClient.get<ApiEnvelope<ProductSuggestion[]>>("/products/suggest", { params: { q } });
-  return res.data.data;
-}
-
-export async function getProductColors(): Promise<string[]> {
-  const res = await apiClient.get<ApiEnvelope<string[]>>("/products/colors");
   return res.data.data;
 }
 
@@ -144,4 +134,44 @@ export async function getAllProductSlugsServer(): Promise<string[]> {
     null,
   );
   return body?.data.map((p) => p.slug) ?? [];
+}
+
+// The whole menu, grouped the way it is read: by section, in the order the
+// owner arranged them. Fetched on the server so the menu is in the first HTML
+// response rather than after a client round trip — which is what makes it
+// usable on a phone on mobile data.
+//
+// Paged rather than asked for in one shot: the API caps `limit` at 100, and a
+// single oversized request is rejected outright, which silently emptied the
+// whole menu. The cap below bounds the work if the menu ever grows large.
+const MENU_PAGE_SIZE = 100;
+const MENU_MAX_PAGES = 10;
+
+export async function getMenuServer(): Promise<Product[]> {
+  const dishes: Product[] = [];
+
+  for (let page = 1; page <= MENU_MAX_PAGES; page += 1) {
+    const body = await serverFetchOptional<ApiListEnvelope<Product> | null>(
+      `/products?limit=${MENU_PAGE_SIZE}&page=${page}`,
+      { revalidate: 300 },
+      null,
+    );
+    if (!body) break;
+
+    dishes.push(...body.data);
+    if (page >= body.pagination.pages) break;
+  }
+
+  return dishes;
+}
+
+// Optional: the home page still renders without a "most ordered" row, and a
+// missing one is far better than a home page that fails to render at all.
+export async function getBestSellersServer(): Promise<Product[]> {
+  const body = await serverFetchOptional<ApiEnvelope<Product[]> | null>(
+    '/products/best-sellers',
+    { revalidate: 300 },
+    null,
+  );
+  return body?.data ?? [];
 }

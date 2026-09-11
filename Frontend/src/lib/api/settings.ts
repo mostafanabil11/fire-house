@@ -9,10 +9,11 @@ interface ApiEnvelope<T> {
 }
 
 const DEFAULT_STORE_SETTINGS: StoreSettings = {
-  currency: "USD",
+  currency: "EGP",
   taxRateBasisPoints: 0,
   freeShippingThresholdMinorUnits: 0,
   flatShippingRateMinorUnits: 0,
+  instapayAddress: "",
 };
 
 // Server-side only (used from Server Components like SiteHeader) — settings

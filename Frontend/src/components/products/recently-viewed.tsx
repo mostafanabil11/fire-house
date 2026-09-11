@@ -22,7 +22,7 @@ export function RecentlyViewed({ excludeId }: { excludeId?: string }) {
       <h2 className="mb-8 font-heading text-headline-sm font-bold text-foreground">Recently Viewed</h2>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
         {items.map((item) => (
-          <Link key={item._id} href={`/products/${item.slug}`} className="group">
+          <Link key={item._id} href={`/menu/${item.slug}`} className="group">
             <div className="relative mb-3 aspect-3/4 overflow-hidden bg-muted">
               {item.image && (
                 <Image

@@ -1,37 +1,25 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { RESTAURANT } from "@/config/restaurant";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001"),
-  // Deliberately a bare default rather than a template: every page already
-  // spells out its own "… — Valiant" title, so a template would append the
-  // brand a second time. This is what shows for the homepage and for any page
-  // that sets no title of its own — and "Valiant" alone tells someone who has
-  // not heard of the brand nothing at all.
-  title: "Valiant — Modern Essentials, Made to Last",
-  description:
-    "Modern wardrobe essentials in considered fabrics — shirts, knitwear, denim and outerwear, made to outlast the season.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3101"),
+  title: `${RESTAURANT.name} — Order Online`,
+  description: "Browse the menu, customize your meal, and order directly from the restaurant.",
   openGraph: {
     type: "website",
-    siteName: "Valiant",
-    title: "Valiant — Modern Essentials, Made to Last",
-    description:
-      "Modern wardrobe essentials in considered fabrics — shirts, knitwear, denim and outerwear, made to outlast the season.",
+    siteName: RESTAURANT.name,
+    title: `${RESTAURANT.name} — Order Online`,
+    description: "Browse the menu, customize your meal, and order directly from the restaurant.",
   },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${inter.variable} h-full antialiased`}>
+    <html lang="en" suppressHydrationWarning className="h-full antialiased">
       <body suppressHydrationWarning className="min-h-full flex flex-col">
         <a
           href="#main-content"

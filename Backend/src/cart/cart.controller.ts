@@ -14,23 +14,45 @@ export class CartController {
 
   @Public()
   @Post('validate')
-  @ApiOperation({ summary: 'Re-price and validate an arbitrary set of cart lines (works for guests too)' })
+  @ApiOperation({
+    summary: 'Re-price and validate an arbitrary set of cart lines (works for guests too)',
+  })
   async validate(@Body() dto: ValidateCartDto) {
     return this.cartService.validate(dto.items);
   }
 
   @Get()
   @ApiBearerAuth()
-  @ApiOperation({ summary: "Get the current user's server-synced cart, re-priced against live product data" })
+  @ApiOperation({
+    summary: "Get the current user's server-synced cart, re-priced against live product data",
+  })
   async getCart(@CurrentUser() user: RequestUser) {
     return this.cartService.getCart(user.userId);
   }
 
   @Post('items')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Add an item to the cart (merges quantity if the same product+size is already present)' })
+  @ApiOperation({ summary: 'Add a menu item to the cart (identical customizations merge)' })
   async addItem(@CurrentUser() user: RequestUser, @Body() dto: CartItemDto) {
-    return this.cartService.addItem(user.userId, dto.productId, dto.size, dto.quantity);
+    return this.cartService.addItem(user.userId, dto);
+  }
+
+  @Patch('items/:lineKey')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Set a customized menu line to an exact quantity (0 removes it)' })
+  async updateLine(
+    @CurrentUser() user: RequestUser,
+    @Param('lineKey') lineKey: string,
+    @Body() dto: UpdateCartItemDto
+  ) {
+    return this.cartService.updateLine(user.userId, lineKey, dto.quantity);
+  }
+
+  @Delete('items/:lineKey')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove a customized menu line from the cart' })
+  async removeLine(@CurrentUser() user: RequestUser, @Param('lineKey') lineKey: string) {
+    return this.cartService.updateLine(user.userId, lineKey, 0);
   }
 
   @Patch('items/:productId/:size')
@@ -40,7 +62,7 @@ export class CartController {
     @CurrentUser() user: RequestUser,
     @Param('productId') productId: string,
     @Param('size') size: ProductSize,
-    @Body() dto: UpdateCartItemDto,
+    @Body() dto: UpdateCartItemDto
   ) {
     return this.cartService.updateItem(user.userId, productId, size, dto.quantity);
   }
@@ -51,7 +73,7 @@ export class CartController {
   async removeItem(
     @CurrentUser() user: RequestUser,
     @Param('productId') productId: string,
-    @Param('size') size: ProductSize,
+    @Param('size') size: ProductSize
   ) {
     return this.cartService.removeItem(user.userId, productId, size);
   }

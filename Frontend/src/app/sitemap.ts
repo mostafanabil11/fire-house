@@ -1,31 +1,26 @@
 import type { MetadataRoute } from "next";
 import { getAllProductSlugsServer } from "@/lib/api/products";
-import { getTopLevelCategorySlugsServer } from "@/lib/api/categories";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001";
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3101";
 
-  const [productSlugs, categorySlugs] = await Promise.all([
-    getAllProductSlugsServer(),
-    getTopLevelCategorySlugsServer(),
-  ]);
+  const dishSlugs = await getAllProductSlugsServer();
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: siteUrl, changeFrequency: "daily", priority: 1 },
-    { url: `${siteUrl}/products`, changeFrequency: "daily", priority: 0.9 },
+    { url: `${siteUrl}/menu`, changeFrequency: "daily", priority: 0.9 },
+    { url: `${siteUrl}/track-order`, changeFrequency: "monthly", priority: 0.5 },
+    { url: `${siteUrl}/contact`, changeFrequency: "monthly", priority: 0.4 },
+    { url: `${siteUrl}/faq`, changeFrequency: "monthly", priority: 0.3 },
   ];
 
-  const categoryRoutes: MetadataRoute.Sitemap = categorySlugs.map((slug) => ({
-    url: `${siteUrl}/${slug}`,
-    changeFrequency: "daily",
-    priority: 0.8,
-  }));
-
-  const productRoutes: MetadataRoute.Sitemap = productSlugs.map((slug) => ({
-    url: `${siteUrl}/products/${slug}`,
+  // Menu sections are anchors on the single /menu page rather than pages of
+  // their own, so there is nothing section-shaped to list here.
+  const dishRoutes: MetadataRoute.Sitemap = dishSlugs.map((slug) => ({
+    url: `${siteUrl}/menu/${slug}`,
     changeFrequency: "weekly",
     priority: 0.7,
   }));
 
-  return [...staticRoutes, ...categoryRoutes, ...productRoutes];
+  return [...staticRoutes, ...dishRoutes];
 }

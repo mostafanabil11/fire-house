@@ -39,8 +39,8 @@ export class AddressesService {
       lastName: dto.lastName,
       phone: dto.phone,
       addressLine: dto.addressLine,
-      city: dto.city,
-      governorate: dto.governorate,
+      city: dto.city ?? '',
+      governorate: dto.governorate ?? null,
       postalCode: dto.postalCode ?? null,
       isDefault: makeDefault,
     });

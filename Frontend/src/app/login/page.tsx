@@ -1,9 +1,10 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { LoginContent } from "./login-content";
+import { RESTAURANT } from "@/config/restaurant";
 
 export const metadata: Metadata = {
-  title: "Sign In — Valiant",
+  title: `Sign In — ${RESTAURANT.name}`,
   robots: { index: false, follow: true },
 };
 

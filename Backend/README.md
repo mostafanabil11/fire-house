@@ -1,6 +1,6 @@
-# Clothing Brand API - Backend
+# Restaurant Ordering API - Backend
 
-A NestJS-based REST API backend for the Clothing Brand application with MongoDB and JWT authentication.
+A NestJS REST API for the restaurant menu, customer checkout, and order-management system.
 
 ## Prerequisites
 
@@ -28,8 +28,8 @@ cp .env.example .env
 4. Update the `.env` file with your configuration:
 ```
 NODE_ENV=development
-PORT=3000
-MONGODB_URI=mongodb://localhost:27017/clothing-brand
+PORT=3100
+MONGODB_URI=mongodb://localhost:27017/restaurant-ordering
 JWT_SECRET=your_jwt_secret_key_here_change_in_production
 JWT_EXPIRATION=7d
 ```
@@ -52,11 +52,11 @@ npm run start:prod
 npm run start:debug
 ```
 
-The API will be available at `http://localhost:3000`
+The API will be available at `http://localhost:3100`
 
 ## API Documentation
 
-Swagger documentation is available at `http://localhost:3000/api`
+Swagger documentation is available at `http://localhost:3100/api`
 
 ## Available Endpoints
 

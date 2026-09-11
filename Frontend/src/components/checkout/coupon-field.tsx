@@ -4,9 +4,10 @@ import { useState } from "react";
 import { Tag, X, Loader2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { validateCoupon } from "@/lib/api/coupons";
+import { cartLinesToPayload } from "@/lib/api/cart";
 import { useAppliedCoupon } from "@/hooks/use-applied-coupon";
 import { formatPrice } from "@/lib/format";
-import type { ResolvedCartLine } from "@/types/cart";
+import type { CartLine } from "@/types/cart";
 
 // Cart and auth state arrive as props rather than via useCart(). This
 // component renders inside screens that hide themselves while auth is
@@ -22,7 +23,7 @@ export function CouponField({
   isAuthenticated,
   guestEmail,
 }: {
-  items: ResolvedCartLine[];
+  items: CartLine[];
   isAuthenticated: boolean;
   guestEmail?: string | null;
 }) {
@@ -38,11 +39,7 @@ export function CouponField({
           ? undefined
           : {
               email: guestEmail,
-              items: items.map((i) => ({
-                productId: i.productId,
-                size: i.size,
-                quantity: i.quantity,
-              })),
+              items: cartLinesToPayload(items),
             },
       ),
     onSuccess: (applied) => {
@@ -62,7 +59,7 @@ export function CouponField({
           <Tag className="size-3.5" strokeWidth={1.75} />
           <span className="font-semibold tracking-[0.03em]">{coupon.code}</span>
           <span className="text-muted-foreground">
-            {coupon.freeShipping ? "Free shipping applied" : `−${formatPrice(coupon.discountAmount)} applied`}
+            {coupon.freeShipping ? "Free delivery applied" : `−${formatPrice(coupon.discountAmount)} applied`}
           </span>
         </span>
         <button

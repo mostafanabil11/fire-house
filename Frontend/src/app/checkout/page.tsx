@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, Lock, Truck } from "lucide-react";
+import { Bike, CreditCard, MapPin, ReceiptText, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { useCart } from "@/hooks/use-cart";
@@ -12,16 +13,18 @@ import { useAppliedCoupon } from "@/hooks/use-applied-coupon";
 import { getAddresses } from "@/lib/api/addresses";
 import { getStoreSettingsClient } from "@/lib/api/settings";
 import { checkout, getPaymentStatus } from "@/lib/api/orders";
+import { cartLinesToPayload } from "@/lib/api/cart";
 import type { CheckoutResponse } from "@/lib/api/orders";
 import { formatPrice } from "@/lib/format";
+import { CheckoutCard } from "@/components/checkout/checkout-card";
 import { AddressSection } from "@/components/checkout/address-section";
-import { ContactSection } from "@/components/checkout/contact-section";
-import { GuestDeliverySection } from "@/components/checkout/guest-delivery-section";
+import { DeliveryDetailsSection } from "@/components/checkout/delivery-details-section";
 import { EMPTY_ADDRESS_FORM, type AddressFormValues } from "@/components/checkout/address-form-fields";
 import { OrderSummary } from "@/components/checkout/order-summary";
 import { CouponField } from "@/components/checkout/coupon-field";
 import { PaymentSection, type PaymentMethodType } from "@/components/checkout/payment-section";
 import { CartChangedBanner } from "@/components/products/cart-changed-banner";
+import { RESTAURANT } from "@/config/restaurant";
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -36,16 +39,19 @@ export default function CheckoutPage() {
   // place-order mutation can read it directly at submit time.
   const [guestEmail, setGuestEmail] = useState("");
   const [guestAddress, setGuestAddress] = useState<AddressFormValues>(EMPTY_ADDRESS_FORM);
-  const [summaryOpen, setSummaryOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>("card");
-  const [session, setSession] = useState<CheckoutResponse["payment"] & { orderNumber: string } | null>(null);
+  // Cash is the default because it is how most delivery orders are paid for.
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>("cod");
+  const [paymentReference, setPaymentReference] = useState("");
+  const [session, setSession] = useState<(CheckoutResponse["payment"] & { orderNumber: string }) | null>(
+    null,
+  );
   // Set the moment an order is successfully placed, so the "cart is empty ->
   // go back to /cart" guard below can't hijack the navigation to the
   // confirmation page (placing an order clears the cart).
   const [orderPlaced, setOrderPlaced] = useState(false);
 
-  // One key per visit, reused across retries so a network blip after clicking
-  // pay can't produce a second order.
+  // One key per visit, reused across retries so a network blip after tapping
+  // place-order can't produce a second order.
   const idempotencyKey = useRef<string>(crypto.randomUUID());
 
   // Guests have no address book — the query would 401 — so it only runs once
@@ -63,7 +69,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     // Waits for auth to resolve because until it does we don't yet know which
     // cart source is authoritative, and an empty placeholder is
-    // indistinguishable from a genuinely empty basket.
+    // indistinguishable from a genuinely empty order.
     // Also skipped once a payment session exists: the cart legitimately still
     // has items while the customer is mid-payment.
     if (!orderPlaced && !session && !userLoading && !cartLoading && cart.items.length === 0) {
@@ -71,7 +77,7 @@ export default function CheckoutPage() {
     }
   }, [orderPlaced, session, userLoading, cartLoading, cart.items.length, router]);
 
-  const shippingCost = useMemo(() => {
+  const deliveryFee = useMemo(() => {
     if (!settingsQuery.data) return null;
     if (coupon?.freeShipping) return 0;
     return cart.subtotal >= settingsQuery.data.freeShippingThresholdMinorUnits
@@ -80,8 +86,9 @@ export default function CheckoutPage() {
   }, [settingsQuery.data, cart.subtotal, coupon?.freeShipping]);
 
   const discountAmount = coupon?.discountAmount ?? 0;
-  const total = shippingCost === null ? null : cart.subtotal + shippingCost - discountAmount;
+  const total = deliveryFee === null ? null : cart.subtotal + deliveryFee - discountAmount;
   const cartIsClean = !cart.hasChanges && cart.items.every((i) => i.available);
+  const instapayAddress = settingsQuery.data?.instapayAddress ?? "";
 
   // While the payment frame is open, poll our own backend rather than trusting
   // the provider's browser redirect — that redirect is lost if the customer
@@ -112,7 +119,7 @@ export default function CheckoutPage() {
           setSession(null);
           idempotencyKey.current = crypto.randomUUID();
           queryClient.invalidateQueries({ queryKey: ["cart", "server"] });
-          toast.error("That payment didn't go through. Your bag is unchanged — please try again.");
+          toast.error("That payment didn't go through. Your order is unchanged — please try again.");
         }
       } catch {
         // Transient network error: keep polling rather than tearing down a
@@ -138,23 +145,17 @@ export default function CheckoutPage() {
       checkout({
         idempotencyKey: idempotencyKey.current,
         paymentMethod,
+        paymentReference: paymentMethod === "instapay" ? paymentReference.trim() : null,
         couponCode: coupon?.code ?? null,
         ...(user
           ? { addressId: selectedAddressId }
           : {
               email: guestEmail.trim(),
-              shippingAddress: {
-                ...guestAddress,
-                postalCode: guestAddress.postalCode || null,
-              },
-              // The guest's basket lives only in this browser, so it travels
+              shippingAddress: guestAddress,
+              // The guest's order lives only in this browser, so it travels
               // with the request. The server re-prices every line before
               // charging anything.
-              items: cart.items.map((i) => ({
-                productId: i.productId,
-                size: i.size,
-                quantity: i.quantity,
-              })),
+              items: cartLinesToPayload(cart.items),
             }),
       }),
     onSuccess: (result) => {
@@ -168,7 +169,7 @@ export default function CheckoutPage() {
       }
       setOrderPlaced(true);
       // A member's cart was emptied server-side; a guest's lives here, so it
-      // has to be cleared locally or the items would still be in the bag on
+      // has to be cleared locally or the items would still be in the cart on
       // the confirmation page.
       if (!user) {
         clearLocalCart();
@@ -177,9 +178,11 @@ export default function CheckoutPage() {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       router.push(`/order-confirmation/${result.order.orderNumber}`);
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.message ?? "Could not place your order — please try again");
-      if (err?.response?.status === 409) {
+    onError: (err: unknown) => {
+      const response = (err as { response?: { status?: number; data?: { message?: string } } })
+        .response;
+      toast.error(response?.data?.message ?? "Could not place your order — please try again");
+      if (response?.status === 409) {
         queryClient.invalidateQueries({ queryKey: ["cart", "server"] });
       }
     },
@@ -210,142 +213,161 @@ export default function CheckoutPage() {
     guestAddress.firstName.trim() !== "" &&
     guestAddress.lastName.trim() !== "" &&
     guestAddress.phone.trim() !== "" &&
-    guestAddress.addressLine.trim() !== "" &&
-    guestAddress.city.trim() !== "";
+    guestAddress.addressLine.trim() !== "";
 
   const deliveryReady = user ? !!selectedAddressId : guestDetailsComplete;
+  const paymentReady = paymentMethod !== "instapay" || paymentReference.trim().length >= 3;
 
   const canPlaceOrder =
-    deliveryReady && cartIsClean && total !== null && !placeOrderMutation.isPending && !session;
+    deliveryReady &&
+    paymentReady &&
+    cartIsClean &&
+    total !== null &&
+    !placeOrderMutation.isPending &&
+    !session;
+
+  const actionLabel = placeOrderMutation.isPending
+    ? "Placing your order…"
+    : paymentMethod === "card"
+      ? "Continue to payment"
+      : "Place order";
 
   return (
-    <div className="mx-auto w-full max-w-(--spacing-container-max) px-margin-mobile py-stack-xl md:px-margin-desktop">
-      <h1 className="mb-8 font-heading text-headline-sm font-bold text-foreground md:text-headline-md">
-        Checkout
-      </h1>
+    <div className="mx-auto w-full max-w-6xl px-4 pt-6 pb-40 sm:px-6 lg:pb-16">
+      <h1 className="font-heading text-3xl font-black tracking-[-0.04em] sm:text-4xl">Checkout</h1>
 
-      {/* Mobile: collapsible summary, mirroring the sticky desktop sidebar */}
-      <div className="mb-8 border border-border md:hidden">
-        <button
-          type="button"
-          onClick={() => setSummaryOpen((v) => !v)}
-          aria-expanded={summaryOpen}
-          className="flex w-full items-center justify-between px-4 py-4 text-[13px]"
-        >
-          <span className="flex items-center gap-2 font-medium text-foreground">
-            Order Summary
-            <ChevronDown
-              className={`size-4 transition-transform ${summaryOpen ? "rotate-180" : ""}`}
-              strokeWidth={1.5}
-            />
-          </span>
-          <span className="font-semibold text-foreground">{total === null ? "—" : formatPrice(total)}</span>
-        </button>
-        {summaryOpen && (
-          <div className="space-y-4 border-t border-border p-4">
-            <CouponField items={cart.items} isAuthenticated={!!user} guestEmail={user ? null : guestEmail.trim()} />
-            <OrderSummary
-              items={cart.items}
-              subtotal={cart.subtotal}
-              shippingCost={shippingCost}
-              discountAmount={discountAmount}
-              couponCode={coupon?.code ?? null}
-              total={total}
-            />
-          </div>
-        )}
-      </div>
+      <div className="mt-6 grid gap-4 lg:grid-cols-[1.6fr_1fr] lg:items-start lg:gap-6">
+        <div className="grid gap-4">
+          {!cartIsClean && <CartChangedBanner items={cart.items} />}
 
-      <div className="grid grid-cols-1 gap-gutter md:grid-cols-3">
-        <div className="space-y-10 md:col-span-2">
-          <CartChangedBanner items={cart.items} />
+          <CheckoutCard
+            title="Delivery details"
+            icon={<MapPin className="size-5" strokeWidth={2.25} />}
+          >
+            {user ? (
+              <AddressSection
+                addresses={addressesQuery.data ?? []}
+                selectedId={selectedAddressId}
+                onSelect={setSelectedAddressId}
+              />
+            ) : (
+              <DeliveryDetailsSection
+                address={guestAddress}
+                onAddressChange={setGuestAddress}
+                email={guestEmail}
+                onEmailChange={setGuestEmail}
+                signedInEmail={null}
+                disabled={placeOrderMutation.isPending || !!session}
+              />
+            )}
+          </CheckoutCard>
 
-          <ContactSection
-            email={guestEmail}
-            onEmailChange={setGuestEmail}
-            signedInEmail={user?.email ?? null}
-            disabled={placeOrderMutation.isPending || !!session}
-          />
-
-          {user ? (
-            <AddressSection
-              addresses={addressesQuery.data ?? []}
-              selectedId={selectedAddressId}
-              onSelect={setSelectedAddressId}
-            />
-          ) : (
-            <GuestDeliverySection
-              value={guestAddress}
-              onChange={setGuestAddress}
-              disabled={placeOrderMutation.isPending || !!session}
-            />
-          )}
-
-          <section aria-labelledby="shipping-heading">
-            <h2 id="shipping-heading" className="mb-4 font-heading text-headline-sm font-bold text-foreground">
-              Shipping Method
-            </h2>
-            <div className="flex items-center justify-between border border-foreground p-4 text-sm">
-              <span className="flex items-center gap-3 text-foreground">
-                <Truck className="size-4" strokeWidth={1.5} />
-                Standard Shipping
-              </span>
-              <span className="font-medium text-foreground">
-                {shippingCost === null ? "—" : shippingCost === 0 ? "Free" : formatPrice(shippingCost)}
-              </span>
+          <CheckoutCard
+            title="Delivery time"
+            icon={<Bike className="size-5" strokeWidth={2.25} />}
+          >
+            <div className="flex items-center justify-between gap-3 rounded-2xl border border-foreground bg-foreground/[0.04] p-4">
+              <div>
+                <p className="text-[15px] font-black">As soon as possible</p>
+                <p className="text-xs text-muted-foreground">
+                  Usually {RESTAURANT.estimatedDelivery} from when we confirm your order
+                </p>
+              </div>
+              <p className="shrink-0 text-sm font-black">
+                {deliveryFee === null
+                  ? "—"
+                  : deliveryFee === 0
+                    ? "Free"
+                    : formatPrice(deliveryFee)}
+              </p>
             </div>
-          </section>
+          </CheckoutCard>
 
-          <PaymentSection
-            selected={paymentMethod}
-            onSelect={handleSelectMethod}
-            iframeUrl={session?.iframeUrl ?? null}
-            expiresAt={session?.expiresAt ?? null}
-            onExpire={handleSessionExpired}
-            disabled={placeOrderMutation.isPending}
+          <CheckoutCard
+            title="Payment"
+            icon={<CreditCard className="size-5" strokeWidth={2.25} />}
+          >
+            <PaymentSection
+              selected={paymentMethod}
+              onSelect={handleSelectMethod}
+              instapayAddress={instapayAddress}
+              paymentReference={paymentReference}
+              onPaymentReferenceChange={setPaymentReference}
+              total={total}
+              formatAmount={formatPrice}
+              iframeUrl={session?.iframeUrl ?? null}
+              expiresAt={session?.expiresAt ?? null}
+              onExpire={handleSessionExpired}
+              disabled={placeOrderMutation.isPending}
+            />
+          </CheckoutCard>
+
+          <CheckoutCard title="Promo code" icon={<Tag className="size-5" strokeWidth={2.25} />}>
+            <CouponField
+              items={cart.items}
+              isAuthenticated={!!user}
+              guestEmail={user ? null : guestEmail.trim()}
+            />
+          </CheckoutCard>
+        </div>
+
+        {/* The order itself stays visible beside the form on a large screen and
+            sits under it on a phone, where the sticky bar below carries the
+            total instead. */}
+        <CheckoutCard
+          title="Your order"
+          icon={<ReceiptText className="size-5" strokeWidth={2.25} />}
+          action={
+            <Link href="/cart" className="text-sm font-bold text-primary hover:underline">
+              Edit
+            </Link>
+          }
+          className="lg:sticky lg:top-28"
+        >
+          <OrderSummary
+            items={cart.items}
+            subtotal={cart.subtotal}
+            shippingCost={deliveryFee}
+            discountAmount={discountAmount}
+            couponCode={coupon?.code ?? null}
+            total={total}
           />
 
           {session ? (
-            <div className="border border-border bg-muted px-5 py-4 text-[13px] text-muted-foreground">
-              Complete your card details above to finish this order. We&apos;ll confirm automatically once
-              your payment goes through.
-            </div>
+            <p className="mt-5 rounded-2xl bg-muted p-4 text-sm text-muted-foreground">
+              Finish entering your card details above. We&apos;ll confirm your order automatically
+              once the payment goes through.
+            </p>
           ) : (
-            <div>
-              <button
-                type="button"
-                onClick={() => placeOrderMutation.mutate()}
-                disabled={!canPlaceOrder}
-                className="w-full bg-primary py-4 text-button font-medium tracking-[0.05em] text-primary-foreground uppercase transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {placeOrderMutation.isPending
-                  ? "Processing…"
-                  : paymentMethod === "card"
-                    ? `Pay ${total === null ? "" : formatPrice(total)}`
-                    : "Place Order"}
-              </button>
-              <p className="mt-3 flex items-center justify-center gap-1.5 text-[12px] text-muted-foreground">
-                <Lock className="size-3" strokeWidth={2} />
-                Secure checkout — your payment details are never stored on our servers.
-              </p>
-            </div>
+            <button
+              type="button"
+              onClick={() => placeOrderMutation.mutate()}
+              disabled={!canPlaceOrder}
+              className="mt-5 hidden min-h-13 w-full items-center justify-between gap-3 rounded-full bg-primary px-6 text-sm font-black text-primary-foreground transition-transform enabled:hover:-translate-y-0.5 disabled:opacity-45 lg:flex"
+            >
+              <span>{actionLabel}</span>
+              <span>{total === null ? "" : formatPrice(total)}</span>
+            </button>
           )}
-        </div>
-
-        <div className="hidden md:block">
-          <div className="sticky top-24 space-y-6 bg-muted p-8">
-            <OrderSummary
-              items={cart.items}
-              subtotal={cart.subtotal}
-              shippingCost={shippingCost}
-              discountAmount={discountAmount}
-              couponCode={coupon?.code ?? null}
-              total={total}
-            />
-            <CouponField items={cart.items} isAuthenticated={!!user} guestEmail={user ? null : guestEmail.trim()} />
-          </div>
-        </div>
+        </CheckoutCard>
       </div>
+
+      {/* The phone action bar. A food order ends in one tap on a button that
+          is always on screen — not a submit button at the bottom of a long
+          form the customer has to scroll back to. */}
+      {!session && (
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 p-4 backdrop-blur-md lg:hidden">
+          <button
+            type="button"
+            onClick={() => placeOrderMutation.mutate()}
+            disabled={!canPlaceOrder}
+            className="flex min-h-13 w-full items-center justify-between gap-3 rounded-full bg-primary px-6 text-sm font-black text-primary-foreground transition-transform enabled:active:scale-[0.99] disabled:opacity-45"
+          >
+            <span>{actionLabel}</span>
+            <span>{total === null ? "" : formatPrice(total)}</span>
+          </button>
+        </div>
+      )}
     </div>
   );
 }

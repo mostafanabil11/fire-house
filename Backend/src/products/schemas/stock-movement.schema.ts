@@ -21,8 +21,8 @@ export class StockMovement {
   @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Product', required: true })
   product!: Types.ObjectId;
 
-  @Prop({ required: true, enum: PRODUCT_SIZES })
-  size!: ProductSize;
+  @Prop({ type: String, enum: PRODUCT_SIZES, default: null })
+  size: ProductSize | null = null;
 
   // Positive = stock added back, negative = stock consumed. Never zero.
   @Prop({ required: true })

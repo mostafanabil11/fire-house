@@ -1,6 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PaymentModule } from '@/payment/payment.module';
+import { NotificationsModule } from '@/notifications/notifications.module';
 import { ConfigModule } from '@/config/config.module';
 import { OrdersService } from './orders.service';
 import { OrdersController } from './orders.controller';
@@ -30,6 +31,7 @@ import { CouponsModule } from '@/coupons/coupons.module';
     SettingsModule,
     CouponsModule,
     ConfigModule,
+    NotificationsModule,
     forwardRef(() => PaymentModule),
   ],
   controllers: [OrdersController],

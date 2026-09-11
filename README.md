@@ -1,6 +1,6 @@
-# Valiant
+# Restaurant Ordering Website
 
-A full-stack e-commerce storefront for a clothing brand — product catalog, cart,
+A full-stack restaurant ordering system — menu catalog, cart,
 checkout with card and cash-on-delivery payments, order tracking, and an admin
 dashboard.
 
@@ -65,8 +65,8 @@ environment on boot and refuses to start with an invalid config.
 Create `Frontend/.env.local`:
 
 ```bash
-NEXT_PUBLIC_API_URL=http://localhost:3000
-NEXT_PUBLIC_SITE_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:3100
+NEXT_PUBLIC_SITE_URL=http://localhost:3101
 ```
 
 ### Seed the database
@@ -89,14 +89,14 @@ Start the backend first — the frontend's initial requests will fail until the 
 is up.
 
 ```bash
-cd Backend && npm run start:dev    # http://localhost:3000
+cd Backend && npm run start:dev    # http://localhost:3100
 ```
 
 ```bash
-cd Frontend && npm run dev         # http://localhost:3001
+cd Frontend && npm run dev         # http://localhost:3101
 ```
 
-Swagger docs are served at `http://localhost:3000/api` in non-production
+Swagger docs are served at `http://localhost:3100/api` in non-production
 environments only.
 
 ## Tests
@@ -125,8 +125,8 @@ copy the local data up:
 
 ```bash
 cd Backend
-SOURCE_URI="mongodb://localhost:27017/clothing-brand" \
-TARGET_URI="mongodb+srv://USER:PASS@CLUSTER.mongodb.net/clothing-brand" \
+SOURCE_URI="mongodb://localhost:27017/restaurant-ordering" \
+TARGET_URI="mongodb+srv://USER:PASS@CLUSTER.mongodb.net/restaurant-ordering" \
 node scripts/migrate-database.js
 ```
 
@@ -190,7 +190,7 @@ production mode.
 ## Notes
 
 Product and category images are currently served by the frontend itself out of
-`Frontend/public/images`. `next.config.ts` allows `localhost:3001` as an image
+`Frontend/public/images`. `next.config.ts` allows `localhost:3101` as an image
 origin and sets `dangerouslyAllowLocalIP` to work around Next.js's SSRF guard in
 development — both need replacing with the real image host before deploying.
 
@@ -207,7 +207,7 @@ killed rather than stopped, Next.js's build cache can be left locked, producing
 **The site loads but nothing works, and half the homepage is missing.** Check
 the address bar: Next serves `/_next/*` only to the origin the dev server was
 addressed by, and the API's CORS allowlist is pinned to `FRONTEND_URL`. Opening
-the site as `127.0.0.1:3001` rather than `localhost:3001` fails both checks —
+the site as `127.0.0.1:3101` rather than `localhost:3101` fails both checks —
 the HTML renders, no JavaScript loads, and every API call is blocked. Use
 `localhost`.
 

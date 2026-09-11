@@ -7,8 +7,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter);
-  --font-heading: var(--font-inter);
+  --font-sans: var(--font-body);
+  --font-heading: var(--font-display);
 
   /* Stitch design tokens — spacing */
   --spacing-unit: 8px;
@@ -89,30 +89,33 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --font-body: "Segoe UI", Arial, sans-serif;
+  --font-display: "Arial Black", "Segoe UI", sans-serif;
+  --background: oklch(0.975 0.012 77);
+  --foreground: oklch(0.17 0.01 70);
+  --card: oklch(0.995 0.006 78);
+  --card-foreground: oklch(0.17 0.01 70);
+  --popover: oklch(0.995 0.006 78);
+  --popover-foreground: oklch(0.17 0.01 70);
+  --primary: oklch(0.61 0.205 34);
+  --primary-foreground: oklch(0.99 0.005 70);
+  --secondary: oklch(0.92 0.035 73);
+  --secondary-foreground: oklch(0.21 0.014 65);
+  --muted: oklch(0.935 0.018 76);
+  --muted-foreground: oklch(0.48 0.02 62);
+  --accent: oklch(0.9 0.07 74);
+  --accent-foreground: oklch(0.21 0.014 65);
+  --destructive: oklch(0.56 0.22 27);
+  --border: oklch(0.86 0.025 72);
+  --input: oklch(0.86 0.025 72);
+  --ring: oklch(0.61 0.205 34);
+  --success: oklch(0.73 0.17 142);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --radius: 0.9rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -124,24 +127,24 @@
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --background: oklch(0.17 0.01 70);
+  --foreground: oklch(0.97 0.012 77);
+  --card: oklch(0.21 0.014 65);
+  --card-foreground: oklch(0.97 0.012 77);
+  --popover: oklch(0.21 0.014 65);
+  --popover-foreground: oklch(0.97 0.012 77);
+  --primary: oklch(0.66 0.195 34);
+  --primary-foreground: oklch(0.99 0.005 70);
+  --secondary: oklch(0.29 0.025 62);
+  --secondary-foreground: oklch(0.97 0.012 77);
+  --muted: oklch(0.27 0.018 65);
+  --muted-foreground: oklch(0.72 0.02 72);
+  --accent: oklch(0.33 0.05 55);
+  --accent-foreground: oklch(0.97 0.012 77);
+  --destructive: oklch(0.7 0.18 25);
+  --border: oklch(1 0 0 / 13%);
+  --input: oklch(1 0 0 / 18%);
+  --ring: oklch(0.66 0.195 34);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -167,4 +170,70 @@
   html {
     @apply font-sans;
   }
+}
+
+html[lang="ar"] {
+  --font-body: Tahoma, Arial, sans-serif;
+  --font-display: Tahoma, Arial, sans-serif;
+}
+
+html[dir="rtl"] body {
+  font-variant-numeric: lining-nums tabular-nums;
+}
+
+html[dir="rtl"] [class*="tracking-"] {
+  letter-spacing: 0;
+}
+
+html[dir="rtl"] .ml-auto {
+  margin-right: auto;
+  margin-left: 0;
+}
+
+html[dir="rtl"] .mr-auto {
+  margin-right: 0;
+  margin-left: auto;
+}
+
+@media (min-width: 48rem) {
+  html[dir="rtl"] .md\:ml-0 {
+    margin-inline-start: 0;
+  }
+}
+
+html[dir="rtl"] .right-1 {
+  right: auto;
+  left: 0.25rem;
+}
+
+html[dir="rtl"] .right-2 {
+  right: auto;
+  left: 0.5rem;
+}
+
+html[dir="rtl"] .right-3 {
+  right: auto;
+  left: 0.75rem;
+}
+
+html[dir="rtl"] .-right-1 {
+  right: auto;
+  left: -0.25rem;
+}
+
+html[dir="rtl"] .-right-2 {
+  right: auto;
+  left: -0.5rem;
+}
+
+html[dir="rtl"] .text-left {
+  text-align: right;
+}
+
+html[dir="rtl"] .text-right {
+  text-align: left;
+}
+
+html[dir="rtl"] :is(.lucide-arrow-right, .lucide-chevron-right, .lucide-chevron-left) {
+  transform: scaleX(-1);
 }

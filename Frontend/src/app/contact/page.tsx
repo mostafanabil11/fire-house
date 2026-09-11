@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Mail } from "lucide-react";
+import { ReceiptText } from "lucide-react";
+import { RESTAURANT } from "@/config/restaurant";
 
 export const metadata: Metadata = {
-  title: "Contact — Valiant",
-  description: "Get in touch with the Valiant team.",
+  title: `Contact — ${RESTAURANT.name}`,
+  description: `Get help with an order from ${RESTAURANT.name}.`,
 };
 
 export default function ContactPage() {
@@ -15,16 +16,16 @@ export default function ContactPage() {
           Get in Touch
         </h1>
         <p className="mb-10 text-[14px] leading-relaxed text-muted-foreground">
-          Questions about an order, sizing, or anything else — we usually reply within one business day.
+          Questions about an order, delivery, or the menu? Our restaurant team is here to help.
         </p>
 
-        <a
-          href="mailto:support@valiant.com"
+        <Link
+          href="/track-order"
           className="inline-flex items-center gap-3 border border-foreground px-8 py-4 text-[14px] font-medium text-foreground transition-colors hover:bg-foreground hover:text-background"
         >
-          <Mail className="size-4" strokeWidth={1.5} />
-          support@valiant.com
-        </a>
+          <ReceiptText className="size-4" strokeWidth={1.5} />
+          Track an order
+        </Link>
 
         <p className="mt-10 text-[13px] text-muted-foreground">
           If your question is about an existing order, include your order number — you can find it in{" "}

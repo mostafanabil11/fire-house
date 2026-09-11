@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { RESTAURANT } from "@/config/restaurant";
 
 export const metadata: Metadata = {
-  title: "Terms of Service — Valiant",
-  description: "The terms that govern your use of Valiant and any orders you place with us.",
+  title: `Terms of Service — ${RESTAURANT.name}`,
+  description: `The terms that govern your use of ${RESTAURANT.name} and orders placed with the restaurant.`,
 };
 
 export default function TermsPage() {
@@ -26,11 +27,11 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="mb-3 font-heading text-headline-sm font-bold text-foreground">Stock &amp; Pricing</h2>
+            <h2 className="mb-3 font-heading text-headline-sm font-bold text-foreground">Availability &amp; Pricing</h2>
             <p>
-              We make every effort to keep stock levels and prices accurate, but an item can occasionally sell
-              out between browsing and checkout. If that happens, we&apos;ll never charge you for an item we
-              can&apos;t fulfill — your order is blocked from completing until your bag reflects what&apos;s
+              We make every effort to keep menu availability and prices accurate, but a dish can occasionally
+              become unavailable between browsing and checkout. If that happens, we&apos;ll never charge you for an item we
+              can&apos;t prepare — your order is blocked from completing until your cart reflects what&apos;s
               actually available.
             </p>
           </section>
@@ -48,9 +49,9 @@ export default function TermsPage() {
             <h2 className="mb-3 font-heading text-headline-sm font-bold text-foreground">Cancellations</h2>
             <p>
               You can cancel an order yourself from your order history as long as it hasn&apos;t been paid for
-              (cash-on-delivery) or shipped yet. Once an order has shipped, see our{" "}
+              or entered preparation. For help with an active order, see our{" "}
               <Link href="/shipping-returns" className="text-foreground underline">
-                Shipping &amp; Returns
+                delivery information
               </Link>{" "}
               page for how to arrange a return.
             </p>
@@ -76,11 +77,8 @@ export default function TermsPage() {
           <section>
             <h2 className="mb-3 font-heading text-headline-sm font-bold text-foreground">Contact</h2>
             <p>
-              Questions about these terms can be sent to{" "}
-              <a href="mailto:support@valiant.com" className="text-foreground underline">
-                support@valiant.com
-              </a>
-              .
+              Questions about these terms can be sent through our{" "}
+              <Link href="/contact" className="text-foreground underline">contact page</Link>.
             </p>
           </section>
         </div>

@@ -29,7 +29,7 @@ jobs:
     steps:
       - name: Ping the health endpoint
         run: |
-          URL="https://valiant-api-27hn.onrender.com/health"
+          URL="${{ secrets.API_HEALTH_URL }}"
 
           # --max-time 90 because a cold start is slow by definition: this
           # request is the one doing the waking, so it must be allowed to wait.

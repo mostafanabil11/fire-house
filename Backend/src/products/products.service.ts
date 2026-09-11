@@ -9,12 +9,16 @@ import { slugify } from '@/common/utils/slugify.util';
 import { escapeRegex } from '@/common/utils/regex.util';
 import { CategoriesService } from '@/categories/categories.service';
 import { ProductSize } from './schemas/product-size-stock.schema';
-import { StockMovement, StockMovementDocument, StockMovementReason } from './schemas/stock-movement.schema';
+import {
+  StockMovement,
+  StockMovementDocument,
+  StockMovementReason,
+} from './schemas/stock-movement.schema';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 export interface StockLine {
   productId: string;
-  size: ProductSize;
+  size: ProductSize | null;
   quantity: number;
 }
 
@@ -29,7 +33,7 @@ export class ProductsService {
     @InjectModel(Product.name) private productModel: Model<ProductDocument>,
     @InjectModel(StockMovement.name) private stockMovementModel: Model<StockMovementDocument>,
     private categoriesService: CategoriesService,
-    private eventEmitter: EventEmitter2,
+    private eventEmitter: EventEmitter2
   ) {}
 
   private async ensureUniqueSlug(baseSlug: string, excludeId?: string): Promise<string> {
@@ -63,7 +67,9 @@ export class ProductsService {
       err instanceof Error &&
       err.name === 'MongoServerError' &&
       (err as Error & { code?: number }).code === 11000 &&
-      Object.keys((err as Error & { keyPattern?: Record<string, unknown> }).keyPattern ?? {}).includes('slug')
+      Object.keys(
+        (err as Error & { keyPattern?: Record<string, unknown> }).keyPattern ?? {}
+      ).includes('slug')
     );
   }
 
@@ -71,7 +77,7 @@ export class ProductsService {
     product: ProductDocument,
     baseSlug: string,
     excludeId?: string,
-    maxAttempts = 10,
+    maxAttempts = 10
   ): Promise<void> {
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
@@ -87,13 +93,9 @@ export class ProductsService {
   }
 
   private async validateCategory(categoryId: string) {
-    const category = await this.categoriesService.findByIdOrThrow(categoryId);
-    if (category.parent === null) {
-      throw new BadRequestException(
-        'Products must be assigned to a subcategory (e.g. "Men > Hoodies"), not a top-level category like "Men".',
-      );
-    }
-    return category;
+    // Restaurant menu sections are commonly flat (Starters, Mains, Drinks),
+    // though the existing nested-category support remains available.
+    return this.categoriesService.findByIdOrThrow(categoryId);
   }
 
   private validatePricing(price: number, discountPrice?: number | null) {
@@ -116,13 +118,22 @@ export class ProductsService {
       name: dto.name,
       slug,
       description: dto.description ?? null,
-      color: dto.color,
+      color: dto.color ?? null,
       styleGroup: dto.styleGroup ? slugify(dto.styleGroup) : null,
       category: category._id,
       price: dto.price,
       discountPrice: dto.discountPrice ?? null,
       images: dto.images,
       sizes: dto.sizes,
+      variants: dto.variants,
+      modifierGroups: dto.modifierGroups,
+      dietaryTags: dto.dietaryTags,
+      allergens: dto.allergens,
+      preparationTimeMinutes: dto.preparationTimeMinutes ?? null,
+      isAvailable: dto.isAvailable ?? true,
+      trackInventory: dto.trackInventory ?? false,
+      stockQuantity: dto.trackInventory ? dto.stockQuantity : null,
+      displayOrder: dto.displayOrder ?? 0,
       isBestSeller: dto.isBestSeller ?? false,
     });
 
@@ -152,7 +163,8 @@ export class ProductsService {
     }
 
     const nextPrice = dto.price ?? product.price;
-    const nextDiscountPrice = dto.discountPrice !== undefined ? dto.discountPrice : product.discountPrice;
+    const nextDiscountPrice =
+      dto.discountPrice !== undefined ? dto.discountPrice : product.discountPrice;
     this.validatePricing(nextPrice, nextDiscountPrice);
 
     let baseSlug: string | null = null;
@@ -175,6 +187,22 @@ export class ProductsService {
     if (dto.discountPrice !== undefined) product.discountPrice = dto.discountPrice;
     if (dto.images !== undefined) product.images = dto.images;
     if (dto.sizes !== undefined) product.sizes = dto.sizes;
+    if (dto.variants !== undefined) product.variants = dto.variants;
+    if (dto.modifierGroups !== undefined) product.modifierGroups = dto.modifierGroups;
+    if (dto.dietaryTags !== undefined) product.dietaryTags = dto.dietaryTags;
+    if (dto.allergens !== undefined) product.allergens = dto.allergens;
+    if (dto.preparationTimeMinutes !== undefined)
+      product.preparationTimeMinutes = dto.preparationTimeMinutes;
+    if (dto.isAvailable !== undefined) product.isAvailable = dto.isAvailable;
+    if (dto.trackInventory !== undefined) product.trackInventory = dto.trackInventory;
+    if (dto.stockQuantity !== undefined) product.stockQuantity = dto.stockQuantity;
+    if (dto.trackInventory === false) product.stockQuantity = null;
+    if (product.trackInventory && product.stockQuantity == null) {
+      throw new BadRequestException(
+        'Stock quantity is required when inventory tracking is enabled'
+      );
+    }
+    if (dto.displayOrder !== undefined) product.displayOrder = dto.displayOrder;
     if (dto.isBestSeller !== undefined) product.isBestSeller = dto.isBestSeller;
     if (dto.isActive !== undefined) product.isActive = dto.isActive;
 
@@ -220,7 +248,7 @@ export class ProductsService {
 
   private async buildProductFilter(
     query: ProductQueryDto,
-    includeInactive: boolean,
+    includeInactive: boolean
   ): Promise<FilterQuery<ProductDocument>> {
     const filter: FilterQuery<ProductDocument> = includeInactive ? {} : { isActive: true };
 
@@ -235,6 +263,14 @@ export class ProductsService {
 
     if (query.color) {
       filter.color = new RegExp(`^${escapeRegex(query.color)}$`, 'i');
+    }
+
+    if (query.dietaryTag) {
+      filter.dietaryTags = query.dietaryTag;
+    }
+
+    if (query.available !== undefined) {
+      filter.isAvailable = query.available;
     }
 
     if (query.minPrice !== undefined || query.maxPrice !== undefined) {
@@ -267,7 +303,7 @@ export class ProductsService {
   private buildProductSort(sort?: ProductQueryDto['sort']): Record<string, 1 | -1> {
     if (sort === 'price_asc') return { price: 1 };
     if (sort === 'price_desc') return { price: -1 };
-    return { createdAt: -1 };
+    return { displayOrder: 1, createdAt: -1 };
   }
 
   async findAll(query: ProductQueryDto) {
@@ -389,17 +425,7 @@ export class ProductsService {
       throw new NotFoundException('Product not found');
     }
 
-    let relatedColors: unknown[] = [];
-    if (product.styleGroup) {
-      relatedColors = await this.productModel
-        .find({
-          styleGroup: product.styleGroup,
-          isActive: true,
-          _id: { $ne: product._id },
-        })
-        .select('name slug color images')
-        .lean();
-    }
+    const relatedColors: unknown[] = [];
 
     // Same category, different style — the "you might also like" rail.
     // Excludes styleGroup siblings (already shown as colorways above) so the
@@ -409,9 +435,8 @@ export class ProductsService {
         category: (product.category as any)?._id ?? product.category,
         isActive: true,
         _id: { $ne: product._id },
-        ...(product.styleGroup ? { styleGroup: { $ne: product.styleGroup } } : {}),
       })
-      .select('name slug color images price discountPrice')
+      .select('name slug images price discountPrice dietaryTags preparationTimeMinutes isAvailable')
       .limit(8)
       .lean();
 
@@ -431,15 +456,28 @@ export class ProductsService {
   // back for free, for the ledger entry below — no second query.
   async decrementStock(
     productId: string,
-    size: ProductSize,
+    size: ProductSize | null,
     quantity: number,
-    context: StockMovementContext,
+    context: StockMovementContext
   ): Promise<boolean> {
-    const updated = await this.productModel.findOneAndUpdate(
-      { _id: productId, sizes: { $elemMatch: { size, stock: { $gte: quantity } } } },
-      { $inc: { 'sizes.$.stock': -quantity } },
-      { new: true },
-    );
+    const product = await this.productModel.findById(productId);
+    if (!product || !product.isActive || !product.isAvailable) return false;
+
+    // Most dishes are availability-controlled rather than counted. They do
+    // not need a pretend stock movement for every order.
+    if (!product.trackInventory && product.sizes.length === 0) return true;
+
+    const updated = product.trackInventory
+      ? await this.productModel.findOneAndUpdate(
+          { _id: productId, trackInventory: true, stockQuantity: { $gte: quantity } },
+          { $inc: { stockQuantity: -quantity } },
+          { new: true }
+        )
+      : await this.productModel.findOneAndUpdate(
+          { _id: productId, sizes: { $elemMatch: { size, stock: { $gte: quantity } } } },
+          { $inc: { 'sizes.$.stock': -quantity } },
+          { new: true }
+        );
     if (!updated) {
       return false;
     }
@@ -452,15 +490,24 @@ export class ProductsService {
   // hit a stock-out on a later line, and later for order cancellation/refund.
   async restoreStock(
     productId: string,
-    size: ProductSize,
+    size: ProductSize | null,
     quantity: number,
-    context: StockMovementContext,
+    context: StockMovementContext
   ): Promise<void> {
-    const updated = await this.productModel.findOneAndUpdate(
-      { _id: productId, 'sizes.size': size },
-      { $inc: { 'sizes.$.stock': quantity } },
-      { new: true },
-    );
+    const product = await this.productModel.findById(productId);
+    if (!product || (!product.trackInventory && product.sizes.length === 0)) return;
+
+    const updated = product.trackInventory
+      ? await this.productModel.findOneAndUpdate(
+          { _id: productId, trackInventory: true },
+          { $inc: { stockQuantity: quantity } },
+          { new: true }
+        )
+      : await this.productModel.findOneAndUpdate(
+          { _id: productId, 'sizes.size': size },
+          { $inc: { 'sizes.$.stock': quantity } },
+          { new: true }
+        );
     if (updated) {
       await this.recordStockMovement(productId, size, quantity, updated, context);
     }
@@ -468,12 +515,14 @@ export class ProductsService {
 
   private async recordStockMovement(
     productId: string,
-    size: ProductSize,
+    size: ProductSize | null,
     quantityChange: number,
     updatedProduct: ProductDocument,
-    context: StockMovementContext,
+    context: StockMovementContext
   ): Promise<void> {
-    const resultingStock = updatedProduct.sizes.find((s) => s.size === size)?.stock ?? 0;
+    const resultingStock = updatedProduct.trackInventory
+      ? (updatedProduct.stockQuantity ?? 0)
+      : (updatedProduct.sizes.find(s => s.size === size)?.stock ?? 0);
     await this.stockMovementModel.create({
       product: productId,
       size,
@@ -487,7 +536,7 @@ export class ProductsService {
     // means — fires for any positive movement (order rollback, admin
     // recount) regardless of what caused it, not just deliberate restocks.
     const previousStock = resultingStock - quantityChange;
-    if (quantityChange > 0 && previousStock === 0 && resultingStock > 0) {
+    if (size && quantityChange > 0 && previousStock === 0 && resultingStock > 0) {
       this.eventEmitter.emit('product.back_in_stock', {
         productId: updatedProduct._id,
         productName: updatedProduct.name,
@@ -505,7 +554,7 @@ export class ProductsService {
   // the order that caused it.
   async reserveStockForOrder(
     lines: StockLine[],
-    reference: string,
+    reference: string
   ): Promise<{ success: true } | { success: false; failedLine: StockLine }> {
     const decremented: StockLine[] = [];
 
@@ -538,8 +587,16 @@ export class ProductsService {
   // answerable the same way regardless of cause.
   async bulkAdjustStock(
     lines: { productId: string; size: ProductSize; quantityChange: number }[],
-    adminReference: string,
-  ): Promise<{ productId: string; size: ProductSize; quantityChange: number; success: boolean; error?: string }[]> {
+    adminReference: string
+  ): Promise<
+    {
+      productId: string;
+      size: ProductSize;
+      quantityChange: number;
+      success: boolean;
+      error?: string;
+    }[]
+  > {
     const results: {
       productId: string;
       size: ProductSize;
@@ -565,7 +622,11 @@ export class ProductsService {
           reason: 'admin_adjustment',
           reference: adminReference,
         });
-        results.push({ ...line, success: ok, ...(ok ? {} : { error: 'Not enough stock to decrement by that amount' }) });
+        results.push({
+          ...line,
+          success: ok,
+          ...(ok ? {} : { error: 'Not enough stock to decrement by that amount' }),
+        });
       }
     }
 

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  PORT: z.string().default('3000').transform(Number),
+  PORT: z.string().default('3100').transform(Number),
   // Not z.url(): a replica-set connection string lists several hosts
   // separated by commas, which is valid Mongo syntax but not a parseable URL,
   // and rejecting it would refuse to boot against a perfectly good cluster.
@@ -20,7 +20,7 @@ export const envSchema = z.object({
   // boot rather than as a confusing CORS failure in the browser later.
   FRONTEND_URL: z
     .string()
-    .default('http://localhost:3001')
+    .default('http://localhost:3101')
     .refine(
       (value) =>
         value
@@ -41,10 +41,22 @@ export const envSchema = z.object({
   BREVO_API_KEY: z.string().optional(),
   MAIL_FROM_ADDRESS: z.email().optional(),
   MAIL_FROM_NAME: z.string().optional(),
+  ORDER_NUMBER_PREFIX: z
+    .string()
+    .regex(/^[A-Za-z0-9]{2,6}$/, 'ORDER_NUMBER_PREFIX must be 2-6 letters or digits')
+    .optional(),
 
   EMAIL_USER: z.email().optional(),
   EMAIL_PASSWORD: z.string().optional(),
   
+  // WhatsApp order alerts. Optional as a group — see isWhatsAppConfigured.
+  WHATSAPP_ACCESS_TOKEN: z.string().optional(),
+  WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
+  WHATSAPP_RECIPIENTS: z.string().optional(),
+  WHATSAPP_TEMPLATE_NAME: z.string().optional(),
+  WHATSAPP_TEMPLATE_LANGUAGE: z.string().optional(),
+  WHATSAPP_WEBHOOK_VERIFY_TOKEN: z.string().optional(),
+
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   GOOGLE_CALLBACK_URL: z.string().url().optional(),

@@ -3,13 +3,15 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { MapPin, Plus } from "lucide-react";
 import { createAddress } from "@/lib/api/addresses";
+import { addressText } from "@/lib/address-text";
 import type { Address } from "@/types/address";
 import { AddressFormFields, EMPTY_ADDRESS_FORM, type AddressFormValues } from "./address-form-fields";
 
-// The signed-in delivery step: pick from the address book, or add one to it.
-// Guests get GuestDeliverySection instead — same fields, but nowhere to save
-// them to.
+// The signed-in delivery step: pick a saved address, or add one to the book.
+// Guests get DeliveryDetailsSection instead — same fields, but nowhere to
+// save them to.
 export function AddressSection({
   addresses,
   selectedId,
@@ -32,7 +34,12 @@ export function AddressSection({
       setForm(EMPTY_ADDRESS_FORM);
       toast.success("Address added");
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message ?? "Could not save address"),
+    onError: (err: unknown) => {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        "Could not save address";
+      toast.error(message);
+    },
   });
 
   function handleSubmit(e: React.FormEvent) {
@@ -42,59 +49,75 @@ export function AddressSection({
       lastName: form.lastName,
       phone: form.phone,
       addressLine: form.addressLine,
-      city: form.city,
-      governorate: form.governorate,
-      postalCode: form.postalCode || null,
       isDefault: addresses.length === 0,
     });
   }
 
   return (
-    <section>
-      <h2 className="mb-6 font-heading text-headline-sm font-bold text-foreground">Delivery</h2>
-
+    <div>
       {addresses.length > 0 && (
-        <div role="radiogroup" aria-label="Saved addresses" className="mb-6 space-y-3">
-          {addresses.map((address) => (
-            <button
-              key={address._id}
-              type="button"
-              role="radio"
-              aria-checked={selectedId === address._id}
-              onClick={() => onSelect(address._id)}
-              className={`block w-full border p-4 text-left text-sm transition-colors ${
-                selectedId === address._id ? "border-foreground" : "border-border hover:border-foreground/50"
-              }`}
-            >
-              <p className="font-medium text-foreground">
-                {address.firstName} {address.lastName}
-                {address.isDefault && (
-                  <span className="ml-2 text-[11px] font-semibold tracking-[0.05em] text-muted-foreground uppercase">
-                    Default
+        <div role="radiogroup" aria-label="Saved addresses" className="grid gap-2.5">
+          {addresses.map((address) => {
+            const isSelected = selectedId === address._id;
+            return (
+              <button
+                key={address._id}
+                type="button"
+                role="radio"
+                aria-checked={isSelected}
+                onClick={() => onSelect(address._id)}
+                className={`flex w-full items-start gap-3.5 rounded-2xl border p-4 text-left transition-colors ${
+                  isSelected
+                    ? "border-foreground bg-foreground/[0.04] ring-2 ring-foreground/15"
+                    : "border-border bg-background hover:border-foreground/30"
+                }`}
+              >
+                <span
+                  aria-hidden
+                  className={`grid size-10 shrink-0 place-items-center rounded-full ${
+                    isSelected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  <MapPin className="size-5" strokeWidth={2} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="text-[15px] font-black">
+                      {address.firstName} {address.lastName}
+                    </span>
+                    {address.isDefault && (
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[0.65rem] font-black tracking-wide text-muted-foreground uppercase">
+                        Default
+                      </span>
+                    )}
                   </span>
-                )}
-              </p>
-              <p className="mt-1 text-muted-foreground">
-                {address.addressLine}, {address.city}, {address.governorate}
-              </p>
-              <p className="text-muted-foreground">{address.phone}</p>
-            </button>
-          ))}
+                  <span className="mt-1 block text-sm leading-6 text-muted-foreground">
+                    {addressText(address)}
+                  </span>
+                  <span className="block text-sm text-muted-foreground">{address.phone}</span>
+                </span>
+              </button>
+            );
+          })}
 
           {!showForm && (
             <button
               type="button"
               onClick={() => setShowForm(true)}
-              className="text-[13px] font-semibold text-foreground underline"
+              className="flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-dashed border-border text-sm font-bold text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
             >
-              + Use a different address
+              <Plus className="size-4" strokeWidth={2.5} aria-hidden />
+              Deliver somewhere else
             </button>
           )}
         </div>
       )}
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="space-y-4 border-t border-border pt-6">
+        <form
+          onSubmit={handleSubmit}
+          className={`space-y-4 ${addresses.length > 0 ? "mt-5 border-t border-border pt-5" : ""}`}
+        >
           <AddressFormFields
             value={form}
             onChange={setForm}
@@ -102,19 +125,19 @@ export function AddressSection({
             disabled={createMutation.isPending}
           />
 
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <button
               type="submit"
               disabled={createMutation.isPending}
-              className="bg-primary px-6 py-3 text-button font-medium tracking-[0.05em] text-primary-foreground uppercase transition-colors hover:bg-primary/90 disabled:opacity-50"
+              className="inline-flex min-h-12 items-center rounded-full bg-primary px-6 text-sm font-black text-primary-foreground transition-transform enabled:hover:-translate-y-0.5 disabled:opacity-50"
             >
-              {createMutation.isPending ? "Saving…" : "Save Address"}
+              {createMutation.isPending ? "Saving…" : "Save address"}
             </button>
             {addresses.length > 0 && (
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
-                className="px-6 py-3 text-button font-medium tracking-[0.05em] text-foreground uppercase transition-colors hover:opacity-70"
+                className="inline-flex min-h-12 items-center px-4 text-sm font-bold text-muted-foreground transition-colors hover:text-foreground"
               >
                 Cancel
               </button>
@@ -122,6 +145,6 @@ export function AddressSection({
           </div>
         </form>
       )}
-    </section>
+    </div>
   );
 }

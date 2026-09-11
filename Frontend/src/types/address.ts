@@ -12,8 +12,9 @@ export interface Address {
   lastName: string;
   phone: string;
   addressLine: string;
+  // Empty on addresses saved since checkout stopped asking for them.
   city: string;
-  governorate: EgyptGovernorate;
+  governorate: EgyptGovernorate | null;
   postalCode: string | null;
   isDefault: boolean;
 }
@@ -23,8 +24,8 @@ export interface AddressInput {
   lastName: string;
   phone: string;
   addressLine: string;
-  city: string;
-  governorate: EgyptGovernorate;
+  city?: string;
+  governorate?: EgyptGovernorate | null;
   postalCode?: string | null;
   isDefault?: boolean;
 }

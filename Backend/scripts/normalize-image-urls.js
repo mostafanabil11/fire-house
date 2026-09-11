@@ -4,7 +4,7 @@
  * Images are served by the storefront itself out of Frontend/public, so a
  * stored URL like
  *
- *   http://localhost:3001/images/products/navy-knitted-polo/image1.jpg
+ *   http://localhost:3101/images/products/navy-knitted-polo/image1.jpg
  *
  * pins the data to one environment. Deployed, that address points at the
  * visitor's own machine and every product image breaks. The path alone

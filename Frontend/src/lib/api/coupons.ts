@@ -1,3 +1,4 @@
+import type { CartItemPayload } from "./cart";
 import { apiClient } from "./client";
 import type { Coupon, CreateCouponInput } from "@/types/coupon";
 
@@ -21,7 +22,7 @@ export interface AppliedCoupon {
 // basket in their browser, which the server has no other way to see.
 export async function validateCoupon(
   code: string,
-  guest?: { email?: string | null; items?: { productId: string; size: string; quantity: number }[] },
+  guest?: { email?: string | null; items?: CartItemPayload[] },
 ): Promise<AppliedCoupon> {
   const res = await apiClient.post<ApiEnvelope<AppliedCoupon>>("/coupons/validate", {
     code,

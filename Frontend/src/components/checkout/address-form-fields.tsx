@@ -1,15 +1,10 @@
 "use client";
 
-import { EGYPT_GOVERNORATES, type EgyptGovernorate } from "@/types/address";
-
 export interface AddressFormValues {
   firstName: string;
   lastName: string;
   phone: string;
   addressLine: string;
-  city: string;
-  governorate: EgyptGovernorate;
-  postalCode: string;
 }
 
 export const EMPTY_ADDRESS_FORM: AddressFormValues = {
@@ -17,19 +12,25 @@ export const EMPTY_ADDRESS_FORM: AddressFormValues = {
   lastName: "",
   phone: "",
   addressLine: "",
-  city: "",
-  governorate: "Cairo",
-  postalCode: "",
 };
 
+// text-base, not a smaller size: iOS Safari zooms the whole page in when a
+// focused input's text is under 16px, which on a checkout form throws the
+// layout sideways on every single tap.
 const inputClass =
-  "w-full border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-foreground";
-const labelClass = "mb-2 block text-[12px] font-semibold tracking-[0.1em] text-foreground uppercase";
+  "w-full rounded-2xl border border-border bg-background px-4 py-3 text-base text-foreground outline-none transition-colors focus:border-foreground";
+const labelClass = "mb-1.5 block text-sm font-bold text-foreground";
 
 // The delivery fields themselves, with no opinion about what happens to them.
 // Shared by the signed-in "add a new address" form (which POSTs them to the
 // address book) and the guest checkout form (which just hands them to the
 // order) — so the two can never drift into asking for different things.
+//
+// Ordered the way a delivery is actually dispatched: how to reach you, then
+// who you are, then where to go. The phone comes first because it is the one
+// field the kitchen will use if anything about the order is unclear. The
+// address is one free-text field — the restaurant delivers locally, so area,
+// governorate and postal code only slowed people down.
 //
 // idPrefix keeps the label/input wiring unique when more than one instance is
 // on the page.
@@ -50,10 +51,31 @@ export function AddressFormFields({
 
   return (
     <>
+      <div>
+        <label className={labelClass} htmlFor={`${idPrefix}-phone`}>
+          Mobile number
+        </label>
+        <input
+          id={`${idPrefix}-phone`}
+          type="tel"
+          inputMode="tel"
+          required
+          disabled={disabled}
+          autoComplete="tel"
+          placeholder="01xxxxxxxxx"
+          value={value.phone}
+          onChange={(e) => set("phone", e.target.value)}
+          className={inputClass}
+        />
+        <p className="mt-1.5 text-xs text-muted-foreground">
+          The rider calls this number when they arrive.
+        </p>
+      </div>
+
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className={labelClass} htmlFor={`${idPrefix}-firstName`}>
-            First Name
+            First name
           </label>
           <input
             id={`${idPrefix}-firstName`}
@@ -67,7 +89,7 @@ export function AddressFormFields({
         </div>
         <div>
           <label className={labelClass} htmlFor={`${idPrefix}-lastName`}>
-            Last Name
+            Last name
           </label>
           <input
             id={`${idPrefix}-lastName`}
@@ -85,83 +107,17 @@ export function AddressFormFields({
         <label className={labelClass} htmlFor={`${idPrefix}-addressLine`}>
           Address
         </label>
-        <input
+        <textarea
           id={`${idPrefix}-addressLine`}
           required
           disabled={disabled}
           autoComplete="street-address"
+          rows={2}
+          placeholder="Street, building, floor, flat and a landmark"
           value={value.addressLine}
           onChange={(e) => set("addressLine", e.target.value)}
-          className={inputClass}
+          className={`${inputClass} resize-none`}
         />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className={labelClass} htmlFor={`${idPrefix}-city`}>
-            City
-          </label>
-          <input
-            id={`${idPrefix}-city`}
-            required
-            disabled={disabled}
-            autoComplete="address-level2"
-            value={value.city}
-            onChange={(e) => set("city", e.target.value)}
-            className={inputClass}
-          />
-        </div>
-        <div>
-          <label className={labelClass} htmlFor={`${idPrefix}-governorate`}>
-            Governorate
-          </label>
-          <select
-            id={`${idPrefix}-governorate`}
-            required
-            disabled={disabled}
-            autoComplete="address-level1"
-            value={value.governorate}
-            onChange={(e) => set("governorate", e.target.value as EgyptGovernorate)}
-            className={inputClass}
-          >
-            {EGYPT_GOVERNORATES.map((g) => (
-              <option key={g} value={g}>
-                {g}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className={labelClass} htmlFor={`${idPrefix}-postalCode`}>
-            Postal Code (optional)
-          </label>
-          <input
-            id={`${idPrefix}-postalCode`}
-            disabled={disabled}
-            autoComplete="postal-code"
-            value={value.postalCode}
-            onChange={(e) => set("postalCode", e.target.value)}
-            className={inputClass}
-          />
-        </div>
-        <div>
-          <label className={labelClass} htmlFor={`${idPrefix}-phone`}>
-            Phone
-          </label>
-          <input
-            id={`${idPrefix}-phone`}
-            type="tel"
-            required
-            disabled={disabled}
-            autoComplete="tel"
-            value={value.phone}
-            onChange={(e) => set("phone", e.target.value)}
-            className={inputClass}
-          />
-        </div>
       </div>
     </>
   );

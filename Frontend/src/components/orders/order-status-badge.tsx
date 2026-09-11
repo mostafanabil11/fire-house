@@ -1,8 +1,9 @@
 import type { FulfillmentStatus, PaymentStatus } from "@/types/order";
 
 const FULFILLMENT_LABEL: Record<FulfillmentStatus, string> = {
-  unfulfilled: "Unfulfilled",
-  processing: "Processing",
+  unfulfilled: "Waiting",
+  processing: "Waiting",
+  confirmed: "Confirmed",
   shipped: "Shipped",
   delivered: "Delivered",
   cancelled: "Cancelled",

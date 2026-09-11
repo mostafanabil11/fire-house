@@ -48,7 +48,7 @@ export class ConfigService {
     return this.configService
       .get<string>('FRONTEND_URL')!
       .split(',')
-      .map((url) => url.trim().replace(/\/$/, ''))
+      .map(url => url.trim().replace(/\/$/, ''))
       .filter(Boolean);
   }
 
@@ -85,7 +85,14 @@ export class ConfigService {
   }
 
   get mailFromName(): string {
-    return this.get<string>('MAIL_FROM_NAME')?.trim() || 'Valiant';
+    return this.get<string>('MAIL_FROM_NAME')?.trim() || 'Fire House';
+  }
+
+  // Prefixes the human-readable order number. Configurable because it is
+  // brand-facing: the restaurant reads it out on the phone, and it was still
+  // carrying the initials of the storefront this project was built from.
+  get orderNumberPrefix(): string {
+    return this.get<string>('ORDER_NUMBER_PREFIX')?.trim().toUpperCase() || 'FH';
   }
 
   // Google sign-in is optional, exactly like Paymob card payments: all three
@@ -94,8 +101,56 @@ export class ConfigService {
   // "Google button doesn't work" — it takes the whole process down at boot.
   get isGoogleAuthConfigured(): boolean {
     return Boolean(
-      this.get('GOOGLE_CLIENT_ID') && this.get('GOOGLE_CLIENT_SECRET') && this.get('GOOGLE_CALLBACK_URL'),
+      this.get('GOOGLE_CLIENT_ID') &&
+      this.get('GOOGLE_CLIENT_SECRET') &&
+      this.get('GOOGLE_CALLBACK_URL')
     );
+  }
+
+  // --- WhatsApp order alerts (Meta Cloud API) ---
+  //
+  // All-or-nothing, like Paymob and Google sign-in: without a token, a phone
+  // number id and at least one recipient there is nothing to send or nobody to
+  // send it to. Unconfigured is a supported state — alerts are recorded as
+  // 'skipped' with their full text, so the restaurant can read what its team
+  // would have received while Meta onboarding is still in progress.
+  get isWhatsAppConfigured(): boolean {
+    return Boolean(
+      this.get('WHATSAPP_ACCESS_TOKEN') &&
+      this.get('WHATSAPP_PHONE_NUMBER_ID') &&
+      this.get('WHATSAPP_RECIPIENTS')
+    );
+  }
+
+  get whatsappAccessToken(): string {
+    return this.get<string>('WHATSAPP_ACCESS_TOKEN')?.trim() ?? '';
+  }
+
+  get whatsappPhoneNumberId(): string {
+    return this.get<string>('WHATSAPP_PHONE_NUMBER_ID')?.trim() ?? '';
+  }
+
+  // Comma-separated staff/owner numbers. Meta's Cloud API sends to individual
+  // recipients, so this is a list of people — not a WhatsApp group.
+  get whatsappRecipients(): string {
+    return this.get<string>('WHATSAPP_RECIPIENTS')?.trim() ?? '';
+  }
+
+  // Empty means "send plain text", which only works inside the 24-hour window
+  // opened by the recipient messaging the business. Set this to the approved
+  // template's name for production.
+  get whatsappTemplateName(): string {
+    return this.get<string>('WHATSAPP_TEMPLATE_NAME')?.trim() ?? '';
+  }
+
+  get whatsappTemplateLanguage(): string {
+    return this.get<string>('WHATSAPP_TEMPLATE_LANGUAGE')?.trim() || 'en';
+  }
+
+  // Echoed back to Meta during webhook verification, and used to reject
+  // status callbacks that did not come from them.
+  get whatsappWebhookVerifyToken(): string {
+    return this.get<string>('WHATSAPP_WEBHOOK_VERIFY_TOKEN')?.trim() ?? '';
   }
 
   get paymobApiKey(): string {

@@ -1,6 +1,14 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Schema as MongooseSchema, Types, HydratedDocument } from 'mongoose';
 import { ProductSizeStock, ProductSizeStockSchema } from './product-size-stock.schema';
+import {
+  DIETARY_TAGS,
+  DietaryTag,
+  MenuModifierGroup,
+  MenuModifierGroupSchema,
+  MenuVariant,
+  MenuVariantSchema,
+} from './menu-option.schema';
 
 export type ProductDocument = HydratedDocument<Product>;
 
@@ -18,8 +26,8 @@ export class Product {
   // Each product is a single colorway (e.g. "Navy Knitted Polo T-Shirt" is its
   // own product, "White Knitted Polo T-Shirt" is a separate one) rather than a
   // multi-color variant on one product.
-  @Prop({ required: true, trim: true })
-  color: string = '';
+  @Prop({ type: String, default: null, trim: true })
+  color: string | null = null;
 
   // Optional shared key linking sibling colorways of the same style
   // (e.g. both the Navy and White polo share styleGroup "knitted-polo-t-shirt")
@@ -44,14 +52,47 @@ export class Product {
   @Prop({ type: [String], required: true })
   images: string[] = [];
 
-  @Prop({ type: [ProductSizeStockSchema], required: true })
+  @Prop({ type: [ProductSizeStockSchema], default: [] })
   sizes: ProductSizeStock[] = [];
+
+  // Restaurant menu variants (regular/large, single/double, etc.). The
+  // The legacy option array remains temporarily for a safe data migration,
+  // but new menu items use variants and modifier groups.
+  @Prop({ type: [MenuVariantSchema], default: [] })
+  variants: MenuVariant[] = [];
+
+  @Prop({ type: [MenuModifierGroupSchema], default: [] })
+  modifierGroups: MenuModifierGroup[] = [];
+
+  @Prop({ type: [String], enum: DIETARY_TAGS, default: [] })
+  dietaryTags: DietaryTag[] = [];
+
+  @Prop({ type: [String], default: [] })
+  allergens: string[] = [];
+
+  @Prop({ type: Number, default: null, min: 1, max: 240 })
+  preparationTimeMinutes: number | null = null;
+
+  // Availability is the normal restaurant control. Optional inventory is
+  // reserved for genuinely limited dishes instead of forcing every meal into
+  // option-level stock accounting.
+  @Prop({ default: true })
+  isAvailable: boolean = true;
+
+  @Prop({ default: false })
+  trackInventory: boolean = false;
+
+  @Prop({ type: Number, default: null, min: 0 })
+  stockQuantity: number | null = null;
 
   @Prop({ default: false })
   isBestSeller: boolean = false;
 
   @Prop({ default: true })
   isActive: boolean = true;
+
+  @Prop({ default: 0 })
+  displayOrder: number = 0;
 
   // Denormalized off approved Reviews so the storefront never has to
   // aggregate on every page load — recomputed by ReviewsService whenever a
@@ -72,8 +113,15 @@ export const ProductSchema = SchemaFactory.createForClass(Product);
 // newest first) and findBestSellers() — both previously full collection scans.
 ProductSchema.index({ isActive: 1, category: 1, createdAt: -1 });
 ProductSchema.index({ isActive: 1, isBestSeller: 1 });
+ProductSchema.index({ isActive: 1, isAvailable: 1, category: 1, displayOrder: 1 });
 // Covers findBySlug()'s "also available in" sibling-colorway lookup.
 ProductSchema.index({ styleGroup: 1 });
 // Backs the free-text `q` search in findAll() — replaces the previous
 // unanchored regex scan across name/color.
-ProductSchema.index({ name: 'text', description: 'text', color: 'text' });
+ProductSchema.index({
+  name: 'text',
+  description: 'text',
+  color: 'text',
+  dietaryTags: 'text',
+  allergens: 'text',
+});

@@ -2,7 +2,12 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Schema as MongooseSchema, Types, HydratedDocument } from 'mongoose';
 import { ProductSize, PRODUCT_SIZES } from '@/products/schemas/product-size-stock.schema';
 
-export const PAYMENT_METHODS = ['cod', 'card'] as const;
+// 'instapay' is a bank-to-bank transfer the customer makes in their own
+// banking app before the order is prepared. Nothing about it is automated:
+// the customer sends the money and quotes a reference, and a member of staff
+// confirms it arrived. That is why it is a distinct method rather than a
+// flavour of 'card' — it never produces a provider callback.
+export const PAYMENT_METHODS = ['cod', 'card', 'instapay'] as const;
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 
 // Kept deliberately separate from fulfillment status — an order can be paid
@@ -11,8 +16,52 @@ export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 export const PAYMENT_STATUSES = ['pending', 'paid', 'failed', 'refunded'] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 
-export const FULFILLMENT_STATUSES = ['unfulfilled', 'processing', 'shipped', 'delivered', 'cancelled'] as const;
+// 'confirmed' is the only step staff take now — waiting, then confirmed.
+// 'shipped' and 'delivered' stay so orders from the older, longer flow keep
+// a valid status.
+export const FULFILLMENT_STATUSES = [
+  'unfulfilled',
+  'processing',
+  'confirmed',
+  'shipped',
+  'delivered',
+  'cancelled',
+] as const;
 export type FulfillmentStatus = (typeof FULFILLMENT_STATUSES)[number];
+
+@Schema({ _id: false })
+export class OrderVariantSnapshot {
+  @Prop({ required: true })
+  id: string = '';
+
+  @Prop({ required: true })
+  name: string = '';
+
+  @Prop({ required: true, default: 0 })
+  priceAdjustment: number = 0;
+}
+
+export const OrderVariantSnapshotSchema = SchemaFactory.createForClass(OrderVariantSnapshot);
+
+@Schema({ _id: false })
+export class OrderModifierSnapshot {
+  @Prop({ required: true })
+  id: string = '';
+
+  @Prop({ required: true })
+  name: string = '';
+
+  @Prop({ required: true })
+  groupId: string = '';
+
+  @Prop({ required: true })
+  groupName: string = '';
+
+  @Prop({ required: true, default: 0 })
+  priceAdjustment: number = 0;
+}
+
+export const OrderModifierSnapshotSchema = SchemaFactory.createForClass(OrderModifierSnapshot);
 
 // A line item is a full snapshot, not a live reference — `product` is kept
 // only for linking back (e.g. "buy again"). Every other field is copied at
@@ -29,11 +78,20 @@ export class OrderItem {
   @Prop({ required: true })
   slug: string = '';
 
-  @Prop({ required: true })
-  color: string = '';
+  @Prop({ type: String, default: null })
+  color: string | null = null;
 
-  @Prop({ required: true, enum: PRODUCT_SIZES })
-  size!: ProductSize;
+  @Prop({ type: String, enum: PRODUCT_SIZES, default: null })
+  size: ProductSize | null = null;
+
+  @Prop({ type: OrderVariantSnapshotSchema, default: null })
+  variant: OrderVariantSnapshot | null = null;
+
+  @Prop({ type: [OrderModifierSnapshotSchema], default: [] })
+  modifiers: OrderModifierSnapshot[] = [];
+
+  @Prop({ type: String, default: null, maxlength: 300 })
+  note: string | null = null;
 
   @Prop({ type: String, default: null })
   image: string | null = null;
@@ -67,10 +125,11 @@ export class ShippingAddressSnapshot {
   @Prop({ required: true })
   addressLine: string = '';
 
-  @Prop({ required: true })
+  // Empty for orders placed since checkout stopped asking for them.
+  @Prop({ default: '' })
   city: string = '';
 
-  @Prop({ required: true })
+  @Prop({ default: '' })
   governorate: string = '';
 
   @Prop({ type: String, default: null })
@@ -83,7 +142,7 @@ export type OrderDocument = HydratedDocument<Order>;
 
 @Schema({ timestamps: true })
 export class Order {
-  // Human-readable, e.g. "VLT-20260814-0001" — separate from _id because
+  // Human-readable, e.g. "FH-20260814-0001" — separate from _id because
   // customers and support staff need something they can read aloud.
   @Prop({ required: true, unique: true })
   orderNumber: string = '';
@@ -136,6 +195,12 @@ export class Order {
 
   @Prop({ required: true, enum: PAYMENT_METHODS, default: 'cod' })
   paymentMethod: PaymentMethod = 'cod';
+
+  // The transfer reference the customer quotes for an InstaPay order, so
+  // staff can match the money that arrived to the order in front of them.
+  // Null for every other payment method.
+  @Prop({ type: String, default: null, trim: true, maxlength: 60 })
+  paymentReference: string | null = null;
 
   @Prop({ required: true, enum: PAYMENT_STATUSES, default: 'pending' })
   paymentStatus: PaymentStatus = 'pending';

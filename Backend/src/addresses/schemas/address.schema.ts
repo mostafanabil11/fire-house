@@ -30,11 +30,13 @@ export class Address {
   @Prop({ required: true, trim: true })
   addressLine: string = '';
 
-  @Prop({ required: true, trim: true })
+  // Optional: the address line is the whole address for a local delivery.
+  // Kept so addresses saved before that change still show their area.
+  @Prop({ trim: true, default: '' })
   city: string = '';
 
-  @Prop({ required: true, enum: EGYPT_GOVERNORATES })
-  governorate: EgyptGovernorate = 'Cairo';
+  @Prop({ type: String, enum: [...EGYPT_GOVERNORATES, null], default: null })
+  governorate: EgyptGovernorate | null = null;
 
   @Prop({ type: String, default: null, trim: true })
   postalCode: string | null = null;

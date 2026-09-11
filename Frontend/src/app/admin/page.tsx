@@ -2,105 +2,130 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle } from "lucide-react";
+import { ChevronRight, TrendingUp } from "lucide-react";
 import { getDashboard } from "@/lib/api/admin";
+import { getAdminOrders } from "@/lib/api/orders";
 import { formatPrice } from "@/lib/format";
+import { OrderCard } from "@/components/admin/order-card";
+import { queueStatuses } from "@/lib/staff-orders";
 
-const STATUS_LABELS: Record<string, string> = {
-  unfulfilled: "Unfulfilled",
-  processing: "Processing",
-  shipped: "Shipped",
-  delivered: "Delivered",
-  cancelled: "Cancelled",
-};
+function Stat({
+  label,
+  value,
+  hint,
+  emphasis = false,
+}: {
+  label: string;
+  value: string | number;
+  hint?: string;
+  emphasis?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-2xl border p-5 ${
+        emphasis ? "border-foreground bg-foreground text-background" : "border-border bg-card"
+      }`}
+    >
+      <p
+        className={`text-[0.7rem] font-black tracking-[0.12em] uppercase ${
+          emphasis ? "text-background/60" : "text-muted-foreground"
+        }`}
+      >
+        {label}
+      </p>
+      <p className="mt-1.5 font-heading text-3xl font-black tracking-tight">{value}</p>
+      {hint && (
+        <p className={`mt-1 text-xs ${emphasis ? "text-background/60" : "text-muted-foreground"}`}>
+          {hint}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function AdminDashboardPage() {
   const { data, isLoading } = useQuery({ queryKey: ["admin", "dashboard"], queryFn: getDashboard });
 
+  // The dashboard opens on the work, not on analytics — the first thing the
+  // owner wants to know is whether anything is waiting.
+  const { data: waiting } = useQuery({
+    queryKey: ["admin", "orders", "action", ""],
+    queryFn: () => getAdminOrders({ limit: 5, fulfillmentStatus: queueStatuses("waiting").join(",") }),
+    refetchInterval: 15_000,
+  });
+
+  const needsAction = waiting?.pagination.total ?? 0;
+
   return (
     <div>
-      <h1 className="mb-8 font-heading text-headline-sm font-bold text-foreground">Dashboard</h1>
+      <h1 className="font-heading text-2xl font-black tracking-tight">Dashboard</h1>
 
-      {isLoading || !data ? (
-        <div className="h-64 animate-pulse bg-muted" />
-      ) : (
-        <div className="space-y-10">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="border border-border p-6">
-              <p className="mb-2 text-[11px] font-semibold tracking-[0.1em] text-muted-foreground uppercase">
-                Revenue
-              </p>
-              <p className="font-heading text-headline-sm font-bold text-foreground">{formatPrice(data.revenue)}</p>
-              <p className="mt-1 text-[12px] text-muted-foreground">Paid orders, all time</p>
-            </div>
-            <div className="border border-border p-6">
-              <p className="mb-2 text-[11px] font-semibold tracking-[0.1em] text-muted-foreground uppercase">
-                Total Orders
-              </p>
-              <p className="font-heading text-headline-sm font-bold text-foreground">{data.totalOrders}</p>
-            </div>
-            {["unfulfilled", "processing"].map((status) => (
-              <div key={status} className="border border-border p-6">
-                <p className="mb-2 text-[11px] font-semibold tracking-[0.1em] text-muted-foreground uppercase">
-                  {STATUS_LABELS[status]}
-                </p>
-                <p className="font-heading text-headline-sm font-bold text-foreground">
-                  {data.ordersByStatus[status] ?? 0}
-                </p>
-              </div>
-            ))}
-          </div>
+      <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Stat
+          label="Waiting"
+          value={needsAction}
+          hint={needsAction === 0 ? "All caught up" : "To confirm"}
+          emphasis={needsAction > 0}
+        />
+        <Stat
+          label="Revenue"
+          value={isLoading || !data ? "…" : formatPrice(data.revenue)}
+          hint="Paid orders, all time"
+        />
+        <Stat label="Orders" value={isLoading || !data ? "…" : data.totalOrders} />
+        <Stat
+          label="Confirmed"
+          value={isLoading || !data ? "…" : (data.ordersByStatus.confirmed ?? 0)}
+        />
+      </div>
 
-          <div className="grid grid-cols-1 gap-gutter lg:grid-cols-2">
-            <section>
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-heading text-headline-sm font-bold text-foreground">Low Stock</h2>
-                <Link href="/admin/products" className="text-[12px] text-muted-foreground underline">
-                  View all products
-                </Link>
-              </div>
-              {data.lowStock.length === 0 ? (
-                <p className="text-[13px] text-muted-foreground">Nothing low on stock right now.</p>
-              ) : (
-                <div className="divide-y divide-border border-t border-b border-border">
-                  {data.lowStock.map((product) => (
-                    <Link
-                      key={product._id}
-                      href={`/admin/products/${product._id}`}
-                      className="flex items-center justify-between gap-4 py-3 text-[13px] hover:bg-muted"
-                    >
-                      <span className="flex items-center gap-2 text-foreground">
-                        <AlertTriangle className="size-3.5 shrink-0 text-destructive" strokeWidth={1.75} />
-                        {product.name}
-                      </span>
-                      <span className="shrink-0 text-muted-foreground">
-                        {product.sizes.map((s) => `${s.size}:${s.stock}`).join("  ")}
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <section>
-              <h2 className="mb-4 font-heading text-headline-sm font-bold text-foreground">Top Products</h2>
-              {data.topProducts.length === 0 ? (
-                <p className="text-[13px] text-muted-foreground">No sales yet.</p>
-              ) : (
-                <div className="divide-y divide-border border-t border-b border-border">
-                  {data.topProducts.map((product) => (
-                    <div key={product._id} className="flex items-center justify-between gap-4 py-3 text-[13px]">
-                      <span className="text-foreground">{product.name}</span>
-                      <span className="shrink-0 text-muted-foreground">
-                        {product.quantitySold} sold · {formatPrice(product.revenue)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-          </div>
+      <section className="mt-8">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="font-heading text-lg font-black">Waiting now</h2>
+          <Link
+            href="/admin/orders"
+            className="inline-flex min-h-10 items-center gap-1 text-sm font-bold text-primary hover:underline"
+          >
+            All orders <ChevronRight className="size-4" aria-hidden />
+          </Link>
         </div>
+
+        <div className="mt-3 grid gap-3">
+          {!waiting ? (
+            <div className="h-32 animate-pulse rounded-2xl bg-muted" />
+          ) : waiting.items.length === 0 ? (
+            <div className="rounded-2xl border border-border bg-card p-8 text-center">
+              <p className="font-bold">Nothing waiting</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                New orders show up here and on the orders screen by themselves.
+              </p>
+            </div>
+          ) : (
+            waiting.items.map((order) => <OrderCard key={order._id} order={order} />)
+          )}
+        </div>
+      </section>
+
+      {data && data.topProducts.length > 0 && (
+        <section className="mt-8">
+          <h2 className="flex items-center gap-2 font-heading text-lg font-black">
+            <TrendingUp className="size-5 text-primary" strokeWidth={2.5} aria-hidden />
+            Best sellers
+          </h2>
+          <ul className="mt-3 grid gap-2">
+            {data.topProducts.map((product) => (
+              <li
+                key={product._id}
+                className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-card px-4 py-3 text-sm"
+              >
+                <span className="font-bold">{product.name}</span>
+                <span className="shrink-0 text-muted-foreground">
+                  {product.quantitySold} sold · {formatPrice(product.revenue)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );
