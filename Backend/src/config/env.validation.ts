@@ -74,7 +74,22 @@ export const envSchema = z.object({
 export type EnvConfig = z.infer<typeof envSchema>;
 
 export function validateEnv(config: Record<string, unknown>) {
-  const result = envSchema.safeParse(config);
+  // A variable that exists but holds an empty string is not a configured
+  // variable — it is an unfilled one. Render's blueprint creates every key it
+  // declares, including the ones left blank in the dashboard, so `optional()`
+  // alone is not enough: the key is present, '' reaches the schema, and a
+  // format check like MAIL_FROM_ADDRESS's rejects it. The service then refuses
+  // to boot over an unused email sender, which is the opposite of optional.
+  //
+  // Dropping blanks here makes absent and blank mean the same thing, for every
+  // field, rather than each optional field having to defend itself.
+  const present = Object.fromEntries(
+    Object.entries(config).filter(
+      ([, value]) => typeof value !== 'string' || value.trim() !== '',
+    ),
+  );
+
+  const result = envSchema.safeParse(present);
 
   if (!result.success) {
     console.error('❌ Invalid environment variables:', result.error.format());
