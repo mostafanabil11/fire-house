@@ -9,9 +9,12 @@ import "./globals.css";
 
 const manrope = localFont({ src: "./fonts/Manrope.ttf", variable: "--font-manrope", display: "swap", weight: "200 800" });
 const arabic = localFont({ src: "./fonts/NotoSansArabic.ttf", variable: "--font-arabic", display: "swap", weight: "100 900", preload: false });
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL
+  ?? (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : "http://localhost:3101");
+const socialPreviewImage = "/images/restaurant/hero.png?v=20260916";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3101"),
+  metadataBase: new URL(siteUrl),
   title: `${RESTAURANT.name} — Order Online`,
   description: "Browse the menu, customize your meal, and order directly from the restaurant.",
   openGraph: {
@@ -19,6 +22,20 @@ export const metadata: Metadata = {
     siteName: RESTAURANT.name,
     title: `${RESTAURANT.name} — Order Online`,
     description: "Browse the menu, customize your meal, and order directly from the restaurant.",
+    images: [
+      {
+        url: socialPreviewImage,
+        width: 1672,
+        height: 941,
+        alt: "Burgers, crispy chicken and loaded fries",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${RESTAURANT.name} — Order Online`,
+    description: "Browse the menu, customize your meal, and order directly from the restaurant.",
+    images: [{ url: socialPreviewImage, alt: "Burgers, crispy chicken and loaded fries" }],
   },
 };
 
