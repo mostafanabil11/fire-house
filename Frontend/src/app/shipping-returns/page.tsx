@@ -9,22 +9,23 @@ export const metadata: Metadata = {
 
 export default function DeliveryInformationPage() {
   return (
-    <div className="mx-auto w-full max-w-(--spacing-container-max) px-margin-mobile py-stack-xl md:px-margin-desktop">
+    <div className="page-shell py-stack-xl">
       <div className="mx-auto max-w-2xl">
-        <h1 className="mb-12 font-heading text-headline-sm font-bold text-foreground md:text-headline-md">
+        <p className="eyebrow">Before you order</p>
+        <h1 className="mt-2 mb-10 font-heading text-headline-sm font-bold text-foreground md:text-headline-md">
           Delivery Information
         </h1>
 
-        <div className="space-y-10 text-[14px] leading-relaxed text-muted-foreground">
-          <section>
+        <div className="grid gap-4 text-[14px] leading-relaxed text-muted-foreground sm:grid-cols-2">
+          <section className="surface p-5 sm:p-6">
             <h2 className="mb-3 font-heading text-headline-sm font-bold text-foreground">Delivery area and fee</h2>
             <p>
-              Enter your delivery area during checkout. The website confirms availability and shows the full
-              delivery fee before you place the order.
+              Add your full address at checkout. The delivery fee is shown before you place your order.
+              The restaurant reviews the address when confirming your order.
             </p>
           </section>
 
-          <section>
+          <section className="surface p-5 sm:p-6">
             <h2 className="mb-3 font-heading text-headline-sm font-bold text-foreground">Estimated time</h2>
             <p>
               The current estimate is shown before checkout. Times can change during busy periods, but you can
@@ -32,7 +33,7 @@ export default function DeliveryInformationPage() {
             </p>
           </section>
 
-          <section>
+          <section className="surface p-5 sm:p-6">
             <h2 className="mb-3 font-heading text-headline-sm font-bold text-foreground">Changing or cancelling</h2>
             <p>
               An order can be cancelled before the kitchen starts preparing it. If preparation has already
@@ -40,7 +41,7 @@ export default function DeliveryInformationPage() {
             </p>
           </section>
 
-          <section>
+          <section className="surface p-5 sm:p-6">
             <h2 className="mb-3 font-heading text-headline-sm font-bold text-foreground">Track your order</h2>
             <p>
               Use your order number and email address on the{" "}

@@ -7,16 +7,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { updateProfile, changePassword } from "@/lib/api/auth";
+import { errorMessage } from "@/lib/api/error-message";
+import type { User } from "@/types/user";
 
 export default function AccountSettingsPage() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { data: user, isLoading: userLoading } = useCurrentUser();
-
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
 
   useEffect(() => {
     if (!userLoading && !user) {
@@ -24,12 +20,20 @@ export default function AccountSettingsPage() {
     }
   }, [userLoading, user, router]);
 
-  useEffect(() => {
-    if (user) {
-      setFirstName(user.firstName);
-      setLastName(user.lastName);
-    }
-  }, [user]);
+  if (userLoading || !user) {
+    return null;
+  }
+
+  return <AccountSettingsForm key={user._id} user={user} />;
+}
+
+function AccountSettingsForm({ user }: { user: User }) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const [firstName, setFirstName] = useState(user.firstName);
+  const [lastName, setLastName] = useState(user.lastName);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
   const profileMutation = useMutation({
     mutationFn: () => updateProfile({ firstName, lastName }),
@@ -37,8 +41,8 @@ export default function AccountSettingsPage() {
       queryClient.setQueryData(["auth", "profile"], updated);
       toast.success("Profile updated");
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.message ?? "Could not update profile");
+    onError: (err: unknown) => {
+      toast.error(errorMessage(err, "Could not update profile"));
     },
   });
 
@@ -49,19 +53,15 @@ export default function AccountSettingsPage() {
       toast.success("Password changed — please sign in again");
       router.push("/login");
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.message ?? "Could not change password");
+    onError: (err: unknown) => {
+      toast.error(errorMessage(err, "Could not change password"));
     },
   });
-
-  if (userLoading || !user) {
-    return null;
-  }
 
   const isGoogleAccount = user.authProvider === "google";
 
   return (
-    <div className="mx-auto w-full max-w-(--spacing-container-max) px-margin-mobile py-stack-xl md:px-margin-desktop">
+    <div className="page-shell py-stack-xl">
       <Link href="/account/orders" className="mb-6 inline-block text-[13px] text-muted-foreground underline">
         ← Back to order history
       </Link>
@@ -70,8 +70,8 @@ export default function AccountSettingsPage() {
         Account Settings
       </h1>
 
-      <div className="mx-auto max-w-md space-y-12">
-        <section aria-labelledby="profile-heading">
+      <div className="mx-auto max-w-xl space-y-6">
+        <section aria-labelledby="profile-heading" className="surface p-5 sm:p-7">
           <h2 id="profile-heading" className="mb-1 font-heading text-headline-sm font-bold text-foreground">
             Profile
           </h2>
@@ -97,7 +97,7 @@ export default function AccountSettingsPage() {
                   required
                   value={firstName}
                   onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-foreground"
+                  className="form-field"
                 />
               </div>
               <div>
@@ -112,7 +112,7 @@ export default function AccountSettingsPage() {
                   required
                   value={lastName}
                   onChange={(e) => setLastName(e.target.value)}
-                  className="w-full border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-foreground"
+                  className="form-field"
                 />
               </div>
             </div>
@@ -120,14 +120,14 @@ export default function AccountSettingsPage() {
             <button
               type="submit"
               disabled={profileMutation.isPending || (!firstName.trim() || !lastName.trim())}
-              className="bg-primary px-8 py-3 text-button font-medium tracking-[0.05em] text-primary-foreground uppercase transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="action-primary"
             >
               {profileMutation.isPending ? "Saving…" : "Save Changes"}
             </button>
           </form>
         </section>
 
-        <section aria-labelledby="password-heading">
+        <section aria-labelledby="password-heading" className="surface p-5 sm:p-7">
           <h2 id="password-heading" className="mb-1 font-heading text-headline-sm font-bold text-foreground">
             Password
           </h2>
@@ -161,7 +161,7 @@ export default function AccountSettingsPage() {
                     required
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    className="w-full border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-foreground"
+                    className="form-field"
                   />
                 </div>
                 <div>
@@ -178,7 +178,7 @@ export default function AccountSettingsPage() {
                     minLength={6}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-foreground"
+                    className="form-field"
                   />
                   <p className="mt-2 text-[12px] text-muted-foreground">
                     At least 6 characters, with an uppercase letter, a lowercase letter, and a number.
@@ -188,7 +188,7 @@ export default function AccountSettingsPage() {
                 <button
                   type="submit"
                   disabled={passwordMutation.isPending || !currentPassword || !newPassword}
-                  className="bg-primary px-8 py-3 text-button font-medium tracking-[0.05em] text-primary-foreground uppercase transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="action-primary"
                 >
                   {passwordMutation.isPending ? "Changing…" : "Change Password"}
                 </button>

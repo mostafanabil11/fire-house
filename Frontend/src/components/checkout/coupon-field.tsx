@@ -8,6 +8,7 @@ import { cartLinesToPayload } from "@/lib/api/cart";
 import { useAppliedCoupon } from "@/hooks/use-applied-coupon";
 import { formatPrice } from "@/lib/format";
 import type { CartLine } from "@/types/cart";
+import { errorMessage } from "@/lib/api/error-message";
 
 // Cart and auth state arrive as props rather than via useCart(). This
 // component renders inside screens that hide themselves while auth is
@@ -47,14 +48,14 @@ export function CouponField({
       setError(null);
       setCode("");
     },
-    onError: (err: any) => {
-      setError(err?.response?.data?.message ?? "That coupon code isn't valid");
+    onError: (err: unknown) => {
+      setError(errorMessage(err, "That coupon code isn't valid"));
     },
   });
 
   if (coupon) {
     return (
-      <div className="flex items-center justify-between border border-foreground bg-muted px-4 py-3 text-[13px]">
+      <div className="flex items-center justify-between rounded-2xl border border-foreground bg-muted px-4 py-3 text-[13px]">
         <span className="flex items-center gap-2 text-foreground">
           <Tag className="size-3.5" strokeWidth={1.75} />
           <span className="font-semibold tracking-[0.03em]">{coupon.code}</span>

@@ -30,11 +30,11 @@ export default function AdminLayout({ children }: LayoutProps<"/admin">) {
     <>
       {/* pb-20 on small screens clears the fixed bottom bar, so the last order
           on the board is never trapped underneath it. */}
-      <div className="mx-auto flex w-full max-w-7xl gap-6 px-4 pt-6 pb-20 sm:px-6 md:pt-10 md:pb-16">
-        <aside className="hidden w-56 shrink-0 md:block">
+      <div className="mx-auto flex w-full max-w-7xl gap-8 px-4 pt-6 pb-20 sm:px-6 md:pt-8 md:pb-16">
+        <aside className="surface sticky top-24 hidden h-fit w-60 shrink-0 p-4 md:block">
           <Link
             href="/"
-            className="mb-6 block font-heading text-xl font-black tracking-tight uppercase"
+            className="mb-6 block px-3 font-heading text-xl font-black tracking-tight uppercase"
           >
             {RESTAURANT.name}
           </Link>

@@ -1,4 +1,7 @@
 "use client";
+import { useState } from "react";
+import { validEmail } from "@/lib/checkout-validation";
+import { T } from "@/i18n/language-provider";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -31,6 +34,7 @@ export function DeliveryDetailsSection({
   disabled?: boolean;
 }) {
   const pathname = usePathname();
+  const [emailTouched, setEmailTouched] = useState(false);
 
   return (
     <div className="space-y-4">
@@ -67,6 +71,10 @@ export function DeliveryDetailsSection({
               type="email"
               inputMode="email"
               required
+              maxLength={200}
+              aria-invalid={emailTouched && !validEmail(email)}
+              aria-describedby="checkout-email-help"
+              onBlur={() => setEmailTouched(true)}
               disabled={disabled}
               autoComplete="email"
               placeholder="you@example.com"
@@ -74,8 +82,8 @@ export function DeliveryDetailsSection({
               onChange={(e) => onEmailChange(e.target.value)}
               className={inputClass}
             />
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              Your order confirmation and tracking link are sent here.
+            <p id="checkout-email-help" className={`mt-1.5 text-xs ${emailTouched && !validEmail(email) ? "text-destructive" : "text-muted-foreground"}`}>
+              <T>{emailTouched && !validEmail(email) ? "Enter a valid email address." : "Your order confirmation and tracking link are sent here."}</T>
             </p>
           </>
         )}

@@ -141,29 +141,144 @@ const menuItems: MenuItemSeed[] = [
   },
 
   // SIDES
-  { name: 'French Fries', description: 'Crispy golden salted fries.', price: 45, category: 'Sides' },
-  { name: 'Cheese Fries', description: 'Crispy fries drizzled with melted cheddar cheese sauce.', price: 65, category: 'Sides' },
-  { name: 'Loaded Fries', description: 'Fries loaded with cheddar sauce, jalapeños, and house sauce.', price: 85, category: 'Sides' },
-  { name: 'Onion Rings', description: 'Crispy golden battered onion rings.', price: 60, category: 'Sides' },
-  { name: 'Mozzarella Sticks', description: 'Crispy crumbed mozzarella sticks with dipping sauce.', price: 75, category: 'Sides', isBestSeller: true },
-  { name: 'Chicken Strips (3 pcs)', description: 'Three golden crispy chicken tenders.', price: 90, category: 'Sides' },
-  { name: 'Coleslaw', description: 'Fresh crisp cabbage and shredded carrots in creamy dressing.', price: 35, category: 'Sides' },
-  { name: 'Mac & Cheese', description: 'Tender pasta in creamy rich cheddar cheese sauce.', price: 65, category: 'Sides' },
-  { name: 'Jalapeño Cheese Bites', description: 'Crispy bites filled with melted cheese and spicy jalapeño.', price: 70, category: 'Sides' },
-  { name: 'Potato Wedges', description: 'Seasoned roasted crispy potato wedges.', price: 55, category: 'Sides' },
+  {
+    name: 'French Fries',
+    description: 'Crispy golden salted fries.',
+    price: 45,
+    category: 'Sides',
+    images: ['/images/restaurant/menu/french-fries.png'],
+  },
+  {
+    name: 'Cheese Fries',
+    description: 'Crispy fries drizzled with melted cheddar cheese sauce.',
+    price: 65,
+    category: 'Sides',
+    images: ['/images/restaurant/menu/cheese-fries.png'],
+  },
+  {
+    name: 'Loaded Fries',
+    description: 'Fries loaded with cheddar sauce, jalapeños, and house sauce.',
+    price: 85,
+    category: 'Sides',
+    images: ['/images/restaurant/menu/loaded-fries.png'],
+  },
+  {
+    name: 'Onion Rings',
+    description: 'Crispy golden battered onion rings.',
+    price: 60,
+    category: 'Sides',
+    images: ['/images/restaurant/menu/onion-rings.png'],
+  },
+  {
+    name: 'Mozzarella Sticks',
+    description: 'Crispy crumbed mozzarella sticks with dipping sauce.',
+    price: 75,
+    category: 'Sides',
+    isBestSeller: true,
+    images: ['/images/restaurant/menu/mozzarella-sticks.png'],
+  },
+  {
+    name: 'Chicken Strips (3 pcs)',
+    description: 'Three golden crispy chicken tenders.',
+    price: 90,
+    category: 'Sides',
+    images: ['/images/restaurant/menu/chicken-strips-3-pcs.png'],
+  },
+  {
+    name: 'Coleslaw',
+    description: 'Fresh crisp cabbage and shredded carrots in creamy dressing.',
+    price: 35,
+    category: 'Sides',
+    images: ['/images/restaurant/menu/coleslaw.png'],
+  },
+  {
+    name: 'Mac & Cheese',
+    description: 'Tender pasta in creamy rich cheddar cheese sauce.',
+    price: 65,
+    category: 'Sides',
+    images: ['/images/restaurant/menu/mac-and-cheese.png'],
+  },
+  {
+    name: 'Jalapeño Cheese Bites',
+    description: 'Crispy bites filled with melted cheese and spicy jalapeño.',
+    price: 70,
+    category: 'Sides',
+    images: ['/images/restaurant/menu/jalapeno-cheese-bites.png'],
+  },
+  {
+    name: 'Potato Wedges',
+    description: 'Seasoned roasted crispy potato wedges.',
+    price: 55,
+    category: 'Sides',
+    images: ['/images/restaurant/menu/potato-wedges.png'],
+  },
 
   // DESSERTS
-  { name: 'Chocolate Brownie', description: 'Warm rich chocolate fudge brownie.', price: 65, category: 'Desserts' },
-  { name: 'Lotus Cheesecake Cup', description: 'Creamy cheesecake layered with crunchy Lotus Biscoff.', price: 75, category: 'Desserts' },
-  { name: 'Chocolate Cookie', description: 'Soft-baked double chocolate chip cookie.', price: 45, category: 'Desserts' },
+  {
+    name: 'Chocolate Brownie',
+    description: 'Warm rich chocolate fudge brownie.',
+    price: 65,
+    category: 'Desserts',
+    images: ['/images/restaurant/menu/chocolate-brownie.png'],
+  },
+  {
+    name: 'Lotus Cheesecake Cup',
+    description: 'Creamy cheesecake layered with crunchy Lotus Biscoff.',
+    price: 75,
+    category: 'Desserts',
+    images: ['/images/restaurant/menu/lotus-cheesecake-cup.png'],
+  },
+  {
+    name: 'Chocolate Cookie',
+    description: 'Soft-baked double chocolate chip cookie.',
+    price: 45,
+    category: 'Desserts',
+    images: ['/images/restaurant/menu/chocolate-cookie.png'],
+  },
 
   // DRINKS
-  { name: 'Pepsi', description: 'Chilled Pepsi can (330ml).', price: 35, category: 'Drinks' },
-  { name: 'Pepsi Zero', description: 'Chilled sugar-free Pepsi Zero can (330ml).', price: 35, category: 'Drinks' },
-  { name: '7UP', description: 'Refreshing lemon-lime 7UP can (330ml).', price: 35, category: 'Drinks' },
-  { name: 'Mirinda', description: 'Crisp sparkling orange Mirinda can (330ml).', price: 35, category: 'Drinks' },
-  { name: 'Water', description: 'Pure bottled mineral water.', price: 20, category: 'Drinks' },
-  { name: 'Large Soft Drink', description: 'Large cup fountain soft drink.', price: 45, category: 'Drinks' },
+  {
+    name: 'Pepsi',
+    description: 'Chilled Pepsi can (330ml).',
+    price: 35,
+    category: 'Drinks',
+    images: ['/images/restaurant/menu/pepsi.png'],
+  },
+  {
+    name: 'Pepsi Zero',
+    description: 'Chilled sugar-free Pepsi Zero can (330ml).',
+    price: 35,
+    category: 'Drinks',
+    images: ['/images/restaurant/menu/pepsi-zero.png'],
+  },
+  {
+    name: '7UP',
+    description: 'Refreshing lemon-lime 7UP can (330ml).',
+    price: 35,
+    category: 'Drinks',
+    images: ['/images/restaurant/menu/7up.png'],
+  },
+  {
+    name: 'Mirinda',
+    description: 'Crisp sparkling orange Mirinda can (330ml).',
+    price: 35,
+    category: 'Drinks',
+    images: ['/images/restaurant/menu/mirinda.png'],
+  },
+  {
+    name: 'Water',
+    description: 'Pure bottled mineral water.',
+    price: 20,
+    category: 'Drinks',
+    images: ['/images/restaurant/menu/water.png'],
+  },
+  {
+    name: 'Large Soft Drink',
+    description: 'Large cup fountain soft drink.',
+    price: 45,
+    category: 'Drinks',
+    images: ['/images/restaurant/menu/large-soft-drink.png'],
+  },
 ];
 
 const catalogDependentCollections = [
@@ -189,6 +304,32 @@ async function inspectCatalog() {
   }
 
   console.log('Current catalog counts:', counts);
+}
+
+async function applyMenuImages() {
+  const ProductModel = mongoose.model(Product.name, ProductSchema);
+  const itemsWithImages = menuItems.filter(
+    (item): item is MenuItemSeed & { images: string[] } => Boolean(item.images?.length),
+  );
+
+  const result = await ProductModel.bulkWrite(
+    itemsWithImages.map(item => ({
+      updateOne: {
+        filter: { name: item.name },
+        update: { $set: { images: item.images } },
+      },
+    })),
+  );
+
+  if (result.matchedCount !== itemsWithImages.length) {
+    throw new Error(
+      `Expected ${itemsWithImages.length} menu items but matched ${result.matchedCount}. No catalog records were deleted.`,
+    );
+  }
+
+  console.log(
+    `Applied image paths to ${result.matchedCount} menu items (${result.modifiedCount} changed).`,
+  );
 }
 
 async function replaceMenu() {
@@ -293,8 +434,12 @@ async function run() {
     await inspectCatalog();
     if (process.argv.includes('--replace-menu')) {
       await replaceMenu();
+    } else if (process.argv.includes('--apply-images')) {
+      await applyMenuImages();
     } else {
-      console.log('Inspection only. Pass --replace-menu to replace catalog data.');
+      console.log(
+        'Inspection only. Pass --apply-images to update image paths or --replace-menu to replace catalog data.',
+      );
     }
   } finally {
     await mongoose.disconnect();

@@ -9,11 +9,15 @@ import { formatPrice } from "@/lib/format";
 import { CartChangedBanner } from "@/components/products/cart-changed-banner";
 import { CouponField } from "@/components/checkout/coupon-field";
 import { CartLineDetails } from "@/components/menu/cart-line-details";
+import { PageSkeleton, PageState } from "@/components/ui/page-state";
 
 export default function CartPage() {
-  const { cart, isLoading, isAuthenticated, setQuantity, removeItem } = useCart();
+  const { cart, isLoading, isError, retry, isAuthenticated, setQuantity, removeItem } = useCart();
   const { coupon } = useAppliedCoupon();
   const items = cart.items;
+
+  if (isError) return <div className="page-shell"><PageState title="We couldn't load your order" description="Your selections are saved. Please try again." onRetry={retry} /></div>;
+  if (isLoading && items.length === 0) return <PageSkeleton />;
 
   if (!isLoading && items.length === 0) {
     return (
@@ -95,13 +99,13 @@ export default function CartPage() {
                       type="button"
                       onClick={() => removeItem(item.key)}
                       aria-label={`Remove ${item.name ?? "item"} from your order`}
-                      className="-mt-1 -mr-1 grid size-11 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      className="-mt-1 -me-1 grid size-11 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                     >
                       <X className="size-4" strokeWidth={2} />
                     </button>
                   </div>
 
-                  <div className="mt-auto flex items-center justify-between gap-3 pt-3">
+                  <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-3">
                     <div className="flex items-center gap-1 rounded-full border border-border p-0.5">
                       <button
                         type="button"
@@ -125,7 +129,7 @@ export default function CartPage() {
                         <Plus className="size-3.5" strokeWidth={2.5} />
                       </button>
                     </div>
-                    <p className="font-black">
+                    <p className="shrink-0 font-black">
                       {item.available ? formatPrice(item.lineTotal) : "—"}
                     </p>
                   </div>

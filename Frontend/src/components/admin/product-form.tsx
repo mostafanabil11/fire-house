@@ -9,6 +9,7 @@ import { createProduct, updateProduct, type ProductInput } from "@/lib/api/produ
 import { getAdminCategoryTree } from "@/lib/api/categories";
 import type { Product, ProductSize } from "@/types/product";
 import type { Category } from "@/types/category";
+import { errorMessage } from "@/lib/api/error-message";
 
 const ALL_SIZES: ProductSize[] = ["S", "M", "L", "XL", "2XL"];
 
@@ -75,13 +76,13 @@ export function ProductForm({ product }: { product?: Product }) {
       toast.success(isEdit ? "Product updated" : "Product created");
       router.push("/admin/products");
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.message ?? "Could not save product");
+    onError: (err: unknown) => {
+      toast.error(errorMessage(err, "Could not save product"));
     },
   });
 
   const inputClass =
-    "w-full border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:border-foreground";
+    "w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-foreground";
   const labelClass = "mb-1.5 block text-[11px] font-semibold tracking-[0.1em] text-foreground uppercase";
 
   return (

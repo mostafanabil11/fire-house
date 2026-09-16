@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
+import localFont from "next/font/local";
 import { Providers } from "@/components/providers";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
+import { BrowseCartBar } from "@/components/menu/browse-cart-bar";
 import { RESTAURANT } from "@/config/restaurant";
 import "./globals.css";
+
+const manrope = localFont({ src: "./fonts/Manrope.ttf", variable: "--font-manrope", display: "swap", weight: "200 800" });
+const arabic = localFont({ src: "./fonts/NotoSansArabic.ttf", variable: "--font-arabic", display: "swap", weight: "100 900", preload: false });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3101"),
@@ -19,7 +24,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" suppressHydrationWarning className="h-full antialiased">
+    <html lang="en" data-scroll-behavior="smooth" suppressHydrationWarning className={`h-full antialiased ${manrope.variable} ${arabic.variable}`}>
       <body suppressHydrationWarning className="min-h-full flex flex-col">
         <a
           href="#main-content"
@@ -33,6 +38,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             {children}
           </main>
           <SiteFooter />
+          <BrowseCartBar />
         </Providers>
       </body>
     </html>

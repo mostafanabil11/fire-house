@@ -1,155 +1,31 @@
 "use client";
-
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
-import { Sheet, SheetTrigger, SheetContent } from "@/components/ui/sheet";
-import { InstagramIcon, FacebookIcon } from "@/components/icons/social-icons";
-import { MobileAccountLinks } from "@/components/layout/mobile-account-links";
-import { RESTAURANT } from "@/config/restaurant";
-import { useLanguage } from "@/i18n/language-provider";
+import { Menu, X, Search, ArrowUpRight } from "lucide-react";
+import { Sheet, SheetTrigger, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import { Brand } from "./brand";
+import { MobileAccountLinks } from "./mobile-account-links";
+import { T, useLanguage } from "@/i18n/language-provider";
 import type { Category } from "@/types/category";
-
-interface MobileNavProps {
-  sections: Category[];
-}
-
-// The phone navigation. The desktop header hides its links below md, so
-// without this there is no way to reach the menu, an account, or order
-// tracking from a phone at all.
-export function MobileNav({ sections }: MobileNavProps) {
-  const [open, setOpen] = useState(false);
-  const pathname = usePathname();
-  const { isArabic } = useLanguage();
-
-  const close = () => setOpen(false);
-
-  const linkClass =
-    "flex min-h-12 items-center text-lg font-black tracking-tight transition-colors hover:text-primary";
-
-  return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger
-        render={
-          <button
-            type="button"
-            aria-label="Open navigation"
-            className="grid size-11 shrink-0 place-items-center rounded-full border border-border md:hidden"
-          />
-        }
-      >
-        <Menu className="size-5" strokeWidth={2.25} />
-      </SheetTrigger>
-
-      <SheetContent
-        side={isArabic ? "right" : "left"}
-        // The sheet's own floating close button would land on top of the brand
-        // row; this nav puts its own next to it instead.
-        showCloseButton={false}
-        className="flex w-[86vw] max-w-none flex-col p-0 sm:w-[380px]"
-      >
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <Link href="/" onClick={close} className="flex items-center gap-3">
-            <span className="grid size-9 place-items-center rounded-full bg-primary font-heading text-base font-black text-primary-foreground">
-              {RESTAURANT.shortName}
-            </span>
-            <span className="font-heading text-lg font-black tracking-[-0.02em] uppercase">
-              {RESTAURANT.name}
-            </span>
-          </Link>
-          <button
-            type="button"
-            onClick={close}
-            aria-label="Close navigation"
-            className="grid size-11 place-items-center rounded-full transition-colors hover:bg-muted"
-          >
-            <X className="size-5" strokeWidth={2} />
-          </button>
-        </div>
-
-        <nav aria-label="Main navigation" className="flex-1 overflow-y-auto px-5 py-5">
-          <Link
-            href="/menu"
-            onClick={close}
-            aria-current={pathname === "/menu" ? "page" : undefined}
-            className={`${linkClass} text-primary`}
-          >
-            Full menu
-          </Link>
-
-          {sections.length > 0 && (
-            <div className="mt-4 border-t border-border pt-4">
-              <p className="mb-1 text-xs font-black tracking-[0.14em] text-muted-foreground uppercase">
-                Sections
-              </p>
-              {sections.map((section) => (
-                <Link
-                  key={section._id}
-                  href={`/menu#${section.slug}`}
-                  onClick={close}
-                  className="flex min-h-11 items-center text-base font-bold text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {section.name}
-                </Link>
-              ))}
-            </div>
-          )}
-
-          <div className="mt-4 border-t border-border pt-4">
-            <Link href="/cart" onClick={close} className={linkClass}>
-              Your order
-            </Link>
-            <Link href="/track-order" onClick={close} className={linkClass}>
-              Track an order
-            </Link>
-            <MobileAccountLinks onNavigate={close} />
-          </div>
-
-          <div className="mt-4 border-t border-border pt-4">
-            <Link
-              href="/contact"
-              onClick={close}
-              className="flex min-h-11 items-center text-base font-bold text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Contact us
-            </Link>
-            <Link
-              href="/faq"
-              onClick={close}
-              className="flex min-h-11 items-center text-base font-bold text-muted-foreground transition-colors hover:text-foreground"
-            >
-              FAQ
-            </Link>
-          </div>
-        </nav>
-
-        <div className="border-t border-border px-5 py-5">
-          <div className="flex gap-5">
-            <a
-              href="https://instagram.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Instagram"
-              className="grid size-11 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <InstagramIcon className="size-5" />
-            </a>
-            <a
-              href="https://facebook.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Facebook"
-              className="grid size-11 place-items-center rounded-full border border-border text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <FacebookIcon className="size-5" />
-            </a>
-          </div>
-          <p className="mt-4 text-xs text-muted-foreground">
-            © {new Date().getFullYear()} {RESTAURANT.name}
-          </p>
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
+export function MobileNav({sections}:{sections:Category[]}) {
+ const [open,setOpen]=useState(false);
+ const pathname=usePathname();
+ const {isArabic,t}=useLanguage();
+ const close=()=>setOpen(false);
+ return <Sheet open={open} onOpenChange={setOpen}>
+   <SheetTrigger render={<button type="button" aria-label={t("Open navigation")} className="grid size-9 shrink-0 place-items-center rounded-full hover:bg-muted md:hidden" />}><Menu className="size-5" /></SheetTrigger>
+   <SheetContent side={isArabic?"right":"left"} showCloseButton={false} className="flex w-[min(90vw,380px)] max-w-none flex-col gap-0 p-0">
+     <SheetTitle className="sr-only"><T>Main navigation</T></SheetTitle>
+     <SheetDescription className="sr-only"><T>Browse the menu, manage your order, or get help.</T></SheetDescription>
+     <div className="flex items-center justify-between border-b p-5"><Brand /><button onClick={close} aria-label={t("Close navigation")} className="grid size-10 place-items-center rounded-full hover:bg-muted"><X className="size-5" /></button></div>
+     <nav aria-label={t("Main navigation")} className="flex-1 overflow-y-auto p-5">
+       <Link href="/search" onClick={close} className="mb-5 flex min-h-12 items-center gap-3 rounded-xl border bg-muted/40 px-4 text-sm text-muted-foreground"><Search className="size-4" aria-hidden /><T>Search the menu</T></Link>
+       {[["/menu","Full menu"],["/cart","Your order"],["/track-order","Track an order"]].map(([href,label])=><Link key={href} href={href} onClick={close} aria-current={pathname===href?"page":undefined} className={`flex min-h-14 items-center justify-between border-b text-lg font-bold ${pathname===href?"text-primary":""}`}><T>{label}</T><ArrowUpRight className="size-4 text-muted-foreground" aria-hidden /></Link>)}
+       {sections.map(section=><Link key={section._id} href={`/menu#${section.slug}`} onClick={close} className="block py-3 text-sm"><T>{section.name}</T></Link>)}
+       <div className="my-5"><MobileAccountLinks onNavigate={close} /></div>
+       <div className="border-t pt-5"><p className="eyebrow mb-2"><T>Here to help</T></p>{[["/contact","Contact us"],["/faq","FAQ"],["/shipping-returns","Delivery information"]].map(([href,label])=><Link key={href} href={href} onClick={close} className="block py-3 text-sm font-semibold text-muted-foreground"><T>{label}</T></Link>)}</div>
+     </nav>
+   </SheetContent>
+ </Sheet>;
 }

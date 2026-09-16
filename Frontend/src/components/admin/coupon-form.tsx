@@ -7,9 +7,10 @@ import { toast } from "sonner";
 import { createCoupon, updateCoupon } from "@/lib/api/coupons";
 import type { Coupon, CreateCouponInput } from "@/types/coupon";
 import type { CouponType } from "@/lib/api/coupons";
+import { errorMessage } from "@/lib/api/error-message";
 
 const inputClass =
-  "w-full border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:border-foreground";
+  "w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-foreground";
 const labelClass = "mb-1.5 block text-[11px] font-semibold tracking-[0.1em] text-foreground uppercase";
 
 function toDateInputValue(iso: string | null): string {
@@ -54,7 +55,7 @@ export function CouponForm({ coupon }: { coupon?: Coupon }) {
       toast.success(isEdit ? "Coupon updated" : "Coupon created");
       router.push("/admin/coupons");
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message ?? "Could not save coupon"),
+    onError: (err: unknown) => toast.error(errorMessage(err, "Could not save coupon")),
   });
 
   return (

@@ -1,19 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { formatPrice } from "@/lib/format";
-import { getRecentlyViewed, type RecentlyViewedEntry } from "@/lib/recently-viewed";
+import { getRecentlyViewed } from "@/lib/recently-viewed";
+import { useHydrated } from "@/hooks/use-hydrated";
 
 export function RecentlyViewed({ excludeId }: { excludeId?: string }) {
-  // Read after mount only — localStorage isn't available during SSR, and
-  // reading it on the server would just always return an empty list anyway.
-  const [items, setItems] = useState<RecentlyViewedEntry[]>([]);
-
-  useEffect(() => {
-    setItems(getRecentlyViewed().filter((e) => e._id !== excludeId));
-  }, [excludeId]);
+  const hydrated = useHydrated();
+  const items = hydrated ? getRecentlyViewed().filter((entry) => entry._id !== excludeId) : [];
 
   if (items.length === 0) return null;
 
@@ -23,7 +18,7 @@ export function RecentlyViewed({ excludeId }: { excludeId?: string }) {
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
         {items.map((item) => (
           <Link key={item._id} href={`/menu/${item.slug}`} className="group">
-            <div className="relative mb-3 aspect-3/4 overflow-hidden bg-muted">
+            <div className="relative mb-3 aspect-3/4 overflow-hidden rounded-2xl bg-muted">
               {item.image && (
                 <Image
                   src={item.image}

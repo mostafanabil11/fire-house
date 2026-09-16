@@ -1,29 +1,14 @@
 "use client";
-
 import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
 import { useCart } from "@/hooks/use-cart";
-import { useEffect, useState } from "react";
-
+import { useLanguage } from "@/i18n/language-provider";
 export function CartIconLink({ className, showLabel }: { className?: string; showLabel?: boolean }) {
-  const [isMounted, setIsMounted] = useState(false);
-  const { itemCount: count } = useCart();
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  return (
-    <Link href="/cart" className={className}>
-      {showLabel && <span className="hidden md:inline">Cart</span>}
-      <span className="relative inline-flex">
-        <ShoppingBag className="size-5 md:size-[18px]" strokeWidth={1.5} />
-        {isMounted && count > 0 && (
-          <span className="absolute -top-2 -right-2 flex size-4 items-center justify-center rounded-full bg-foreground text-[9px] font-semibold text-background">
-            {count}
-          </span>
-        )}
-      </span>
-    </Link>
-  );
+  const { itemCount, isLoading } = useCart();
+  const { t } = useLanguage();
+  return <Link href="/cart" className={className} aria-label={t("Your order") + (itemCount ? ` · ${itemCount}` : "")}>
+    <ShoppingBag className="size-5" strokeWidth={1.8} aria-hidden />
+    {showLabel && <span className="hidden md:inline">{t("Your order")}</span>}
+    {!isLoading && itemCount > 0 && <span className="grid min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] text-white">{itemCount}</span>}
+  </Link>;
 }

@@ -127,10 +127,17 @@ export async function getProductBySlugServer(slug: string): Promise<ProductDetai
 // Optional: an empty list means Next renders product pages on demand instead
 // of prerendering them, which is a fine outcome for a build that can't reach
 // the API — unlike failing the entire build.
+//
+// revalidate: 0 rather than a cached list, because this call decides which
+// pages get prerendered and the per-dish fetches that follow are *not*
+// optional. A cached list outliving the API it came from is the worst case:
+// the build believes in slugs it can no longer fetch, generateMetadata throws,
+// and the deploy dies. Asking live keeps the two in agreement — slugs only
+// when the API is actually answering.
 export async function getAllProductSlugsServer(): Promise<string[]> {
   const body = await serverFetchOptional<ApiListEnvelope<Product> | null>(
     '/products?limit=100',
-    { revalidate: 3600 },
+    { revalidate: 0 },
     null,
   );
   return body?.data.map((p) => p.slug) ?? [];

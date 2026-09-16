@@ -27,3 +27,7 @@ npm-debug.log*
 
 # coverage
 coverage/
+
+# local image workspaces — source material for the menu photos, not app code
+generated-menu-review/
+menu-images/

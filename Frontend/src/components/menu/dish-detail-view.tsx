@@ -3,7 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
-import { Clock3, Minus, Plus, UtensilsCrossed } from "lucide-react";
+import { Clock3, Minus, Plus, UtensilsCrossed, Loader2, ChevronDown } from "lucide-react";
+import { errorMessage } from "@/lib/api/error-message";
+import { T, useLanguage } from "@/i18n/language-provider";
 import { useCart } from "@/hooks/use-cart";
 import { formatPrice } from "@/lib/format";
 import { recordRecentlyViewed } from "@/lib/recently-viewed";
@@ -27,8 +29,16 @@ function isRequired(group: MenuModifierGroup) {
   return group.minSelections > 0;
 }
 
+// A can of Pepsi has nothing to customise, so asking "anything else?" there
+// only invites notes the kitchen can't act on.
+function acceptsNote(product: ProductDetail) {
+  return !(typeof product.category === "object" && product.category?.slug === "drinks");
+}
+
 export function DishDetailView({ product }: { product: ProductDetail }) {
-  const { addItem } = useCart();
+  const { addItem, isLoading: cartLoading } = useCart();
+  const { t } = useLanguage();
+  const [adding, setAdding] = useState(false);
 
   const availableVariants = useMemo(
     () => product.variants.filter((variant) => variant.isAvailable),
@@ -115,7 +125,7 @@ export function DishDetailView({ product }: { product: ProductDetail }) {
     });
   }
 
-  function handleAddToCart() {
+  async function handleAddToCart() {
     if (soldOut) {
       toast.error("This dish is not available right now");
       return;
@@ -125,7 +135,9 @@ export function DishDetailView({ product }: { product: ProductDetail }) {
       return;
     }
 
-    addItem(
+    setAdding(true);
+    try {
+    await addItem(
       {
         productId: product._id,
         variantId: selectedVariant?.id ?? null,
@@ -141,14 +153,16 @@ export function DishDetailView({ product }: { product: ProductDetail }) {
       },
     );
 
-    toast.success(`${quantity} × ${product.name} added to your order`);
+    toast.success(t("Added to your order"), { description: `${quantity} × ${t(product.name)}` });
     setQuantity(1);
+    } catch (error) { toast.error(t(errorMessage(error, "Could not add this item. Please try again."))); }
+    finally { setAdding(false); }
   }
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 pt-4 pb-32 sm:px-6 lg:pb-16">
       <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
-        <div className="relative aspect-[4/3] overflow-hidden rounded-[1.5rem] bg-muted lg:sticky lg:top-28 lg:self-start">
+        <div className="lg:sticky lg:top-[calc(var(--header-height)+24px)] lg:self-start"><div className="relative aspect-[4/3] overflow-hidden rounded-[1.5rem] bg-muted">
           {product.images[0] ? (
             <Image
               src={product.images[0]}
@@ -163,7 +177,7 @@ export function DishDetailView({ product }: { product: ProductDetail }) {
               <UtensilsCrossed className="size-16" strokeWidth={1.25} aria-hidden />
             </div>
           )}
-        </div>
+        </div><p className="mt-4 hidden text-sm leading-6 text-muted-foreground lg:block"><T>Make it yours with your favourite extras. Your total updates as you choose.</T></p></div>
 
         <div>
           <h1 className="font-heading text-3xl font-black tracking-[-0.035em] sm:text-4xl">
@@ -247,8 +261,10 @@ export function DishDetailView({ product }: { product: ProductDetail }) {
             const picked = selectedOptions[group.id] ?? [];
             const single = group.maxSelections === 1;
             return (
-              <fieldset key={group.id} className="mt-8">
-                <legend className="text-sm font-black tracking-[0.1em] uppercase">
+              <details key={group.id} open={isRequired(group) || group.options.length <= 3} className="group mt-6 rounded-2xl border bg-card p-4">
+                <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 text-sm font-extrabold"><span><T>{group.name}</T><span className="ms-2 text-xs font-medium text-muted-foreground">{picked.length > 0 ? `${picked.length} ${t("selected")}` : t(isRequired(group) ? "Required" : "Optional")}</span></span><ChevronDown className="size-4 shrink-0 transition-transform group-open:rotate-180" aria-hidden /></summary>
+              <fieldset className="mt-2">
+                <legend className="sr-only">
                   {group.name}
                   <span
                     className={`ml-2 text-xs font-bold tracking-normal normal-case ${
@@ -295,25 +311,28 @@ export function DishDetailView({ product }: { product: ProductDetail }) {
                   })}
                 </div>
               </fieldset>
+              </details>
             );
           })}
 
-          <div className="mt-8">
-            <label htmlFor="dish-note" className="text-sm font-black tracking-[0.1em] uppercase">
-              Anything else?
-              <span className="ml-2 text-xs font-bold tracking-normal text-muted-foreground normal-case">
-                Optional
-              </span>
-            </label>
-            <textarea
-              id="dish-note"
-              value={note}
-              onChange={(event) => setNote(event.target.value.slice(0, 300))}
-              rows={3}
-              placeholder="No pickles, extra napkins…"
-              className="mt-3 w-full rounded-2xl border border-border bg-card p-4 text-base outline-none focus:border-foreground"
-            />
-          </div>
+          {acceptsNote(product) && (
+            <div className="mt-8">
+              <label htmlFor="dish-note" className="text-sm font-black tracking-[0.1em] uppercase">
+                Anything else?
+                <span className="ml-2 text-xs font-bold tracking-normal text-muted-foreground normal-case">
+                  Optional
+                </span>
+              </label>
+              <textarea
+                id="dish-note"
+                value={note}
+                onChange={(event) => setNote(event.target.value.slice(0, 300))}
+                rows={3}
+                placeholder="No pickles, extra napkins…"
+                className="mt-3 w-full rounded-2xl border border-border bg-card p-4 text-base outline-none focus:border-foreground"
+              />
+            </div>
+          )}
 
           {product.allergens.length > 0 && (
             <p className="mt-6 text-sm text-muted-foreground">
@@ -326,7 +345,7 @@ export function DishDetailView({ product }: { product: ProductDetail }) {
 
       {/* Pinned on phones so the running total and the action stay reachable
           without scrolling back up past a long list of add-ons. */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 p-4 backdrop-blur-md lg:static lg:mt-10 lg:border-0 lg:bg-transparent lg:p-0 lg:backdrop-blur-none">
+      <div className="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 p-3 backdrop-blur-md sm:p-4">
         <div className="mx-auto flex max-w-5xl items-center gap-3">
           <div className="flex items-center gap-1 rounded-full border border-border bg-card px-1 py-1">
             <button
@@ -334,7 +353,7 @@ export function DishDetailView({ product }: { product: ProductDetail }) {
               onClick={() => setQuantity((q) => Math.max(1, q - 1))}
               disabled={quantity <= 1}
               aria-label="Decrease quantity"
-              className="grid size-11 place-items-center rounded-full transition-colors hover:bg-muted disabled:opacity-30"
+              className="grid size-9 place-items-center rounded-full transition-colors hover:bg-muted disabled:opacity-30 sm:size-11"
             >
               <Minus className="size-4" strokeWidth={2.5} aria-hidden />
             </button>
@@ -345,7 +364,8 @@ export function DishDetailView({ product }: { product: ProductDetail }) {
               type="button"
               onClick={() => setQuantity((q) => Math.min(50, q + 1))}
               aria-label="Increase quantity"
-              className="grid size-11 place-items-center rounded-full transition-colors hover:bg-muted"
+              disabled={quantity >= 50 || adding}
+              className="grid size-9 place-items-center rounded-full transition-colors hover:bg-muted disabled:opacity-30 sm:size-11"
             >
               <Plus className="size-4" strokeWidth={2.5} aria-hidden />
             </button>
@@ -354,13 +374,13 @@ export function DishDetailView({ product }: { product: ProductDetail }) {
           <button
             type="button"
             onClick={handleAddToCart}
-            disabled={!canAdd}
-            className="flex min-h-13 flex-1 items-center justify-between gap-3 rounded-full bg-primary px-6 text-sm font-black text-primary-foreground transition-transform enabled:hover:-translate-y-0.5 disabled:opacity-45"
+            disabled={!canAdd || adding || cartLoading}
+            className="flex min-h-13 min-w-0 flex-1 flex-wrap items-center justify-between gap-x-2 gap-y-0.5 rounded-2xl bg-primary px-3 py-2 text-xs font-extrabold text-white disabled:opacity-50 sm:px-6 sm:text-sm"
           >
             <span>
-              {soldOut ? "Unavailable" : unmetGroup ? `Choose ${unmetGroup.name}` : "Add to order"}
+              {adding ? <Loader2 className="size-4 animate-spin" aria-label={t("Adding…")} /> : <T>{soldOut ? "Unavailable" : unmetGroup ? `Choose ${unmetGroup.name}` : "Add to order"}</T>}
             </span>
-            <span>{formatPrice(unitPrice * quantity)}</span>
+            <span className="whitespace-nowrap" aria-live="polite"><T>{formatPrice(unitPrice * quantity)}</T></span>
           </button>
         </div>
       </div>

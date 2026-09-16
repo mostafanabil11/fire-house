@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -16,12 +16,10 @@ import Link from "next/link";
 export function PaymentCallbackContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [status, setStatus] = useState<"loading" | "success" | "failed">("loading");
+  const status = searchParams.get("success") === "true" ? "success" : "failed";
 
   useEffect(() => {
-    const success = searchParams.get("success");
-    if (success === "true") {
-      setStatus("success");
+    if (status === "success") {
       // Give the webhook a moment to process, then redirect to order confirmation
       const timer = setTimeout(() => {
         // The merchant_order_id param from Paymob contains our order number
@@ -31,26 +29,12 @@ export function PaymentCallbackContent() {
         }
       }, 3000);
       return () => clearTimeout(timer);
-    } else {
-      setStatus("failed");
     }
-  }, [searchParams, router]);
+  }, [searchParams, router, status]);
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-margin-mobile">
       <div className="w-full max-w-md text-center">
-        {status === "loading" && (
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="size-12 animate-spin text-muted-foreground" strokeWidth={1.5} />
-            <h1 className="font-heading text-headline-sm font-bold text-foreground">
-              Processing your payment…
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Please wait while we confirm your transaction.
-            </p>
-          </div>
-        )}
-
         {status === "success" && (
           <div className="flex flex-col items-center gap-4">
             <div className="flex size-16 items-center justify-center rounded-full bg-green-50">

@@ -14,7 +14,7 @@
   --spacing-unit: 8px;
   --spacing-gutter: 24px;
   --spacing-stack-md: 48px;
-  --spacing-stack-xl: 120px;
+  --spacing-stack-xl: 64px;
   --spacing-margin-mobile: 20px;
   --spacing-margin-desktop: 64px;
   --spacing-container-max: 1440px;
@@ -89,15 +89,15 @@
 }
 
 :root {
-  --font-body: "Segoe UI", Arial, sans-serif;
-  --font-display: "Arial Black", "Segoe UI", sans-serif;
+  --font-body: var(--font-manrope), "Segoe UI", Arial, sans-serif;
+  --font-display: var(--font-manrope), "Segoe UI", Arial, sans-serif;
   --background: oklch(0.975 0.012 77);
   --foreground: oklch(0.17 0.01 70);
   --card: oklch(0.995 0.006 78);
   --card-foreground: oklch(0.17 0.01 70);
   --popover: oklch(0.995 0.006 78);
   --popover-foreground: oklch(0.17 0.01 70);
-  --primary: oklch(0.61 0.205 34);
+  --primary: oklch(0.55 0.19 34);
   --primary-foreground: oklch(0.99 0.005 70);
   --secondary: oklch(0.92 0.035 73);
   --secondary-foreground: oklch(0.21 0.014 65);
@@ -170,11 +170,17 @@
   html {
     @apply font-sans;
   }
+  /* Tailwind v4 dropped the pointer cursor from buttons; without it nothing
+     on the page feels clickable. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
 }
 
 html[lang="ar"] {
-  --font-body: Tahoma, Arial, sans-serif;
-  --font-display: Tahoma, Arial, sans-serif;
+  --font-body: var(--font-arabic), Tahoma, Arial, sans-serif;
+  --font-display: var(--font-arabic), Tahoma, Arial, sans-serif;
 }
 
 html[dir="rtl"] body {
@@ -236,4 +242,36 @@ html[dir="rtl"] .text-right {
 
 html[dir="rtl"] :is(.lucide-arrow-right, .lucide-chevron-right, .lucide-chevron-left) {
   transform: scaleX(-1);
+}
+
+/* Shared restaurant UI, used by customer and staff screens. */
+:root { --header-height: 104px; }
+html { overflow-x: clip; scroll-behavior: smooth; scroll-padding-top: calc(var(--header-height) + 90px); }
+body { overflow-x: clip; line-height: 1.6; }
+::selection { background: var(--secondary); color: var(--foreground); }
+.font-heading { font-weight: 800; letter-spacing: -0.04em; }
+.page-shell { width: 100%; max-width: 1280px; margin-inline: auto; padding: 40px 24px 72px; }
+.eyebrow { font-size: 11px; line-height: 1.5; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--primary); }
+.action-primary, .action-secondary { display: inline-flex; min-height: 48px; align-items: center; justify-content: center; gap: 10px; padding: 12px 22px; border-radius: 999px; font-size: 14px; font-weight: 800; transition: background .18s, box-shadow .18s, transform .18s; }
+.action-primary { background: var(--primary); color: white; }
+.action-primary:hover { filter: brightness(.94); box-shadow: 0 5px 18px #9b33151a; }
+.action-secondary { border: 1px solid var(--border); background: var(--card); color: var(--foreground); }
+.action-secondary:hover { background: var(--muted); }
+.action-primary:disabled, .action-secondary:disabled { cursor: not-allowed; opacity: .5; }
+.form-field { width: 100%; border: 1px solid var(--border); border-radius: 12px; background: var(--card); padding: 12px 16px; font-size: 16px; }
+.surface { border: 1px solid var(--border); border-radius: 24px; background: var(--card); padding: 24px; box-shadow: 0 4px 24px #25150b03; }
+.safe-bottom { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+:where(a,button,input,select,textarea,summary,[tabindex]):focus-visible { outline: 3px solid var(--primary); outline-offset: 4px; }
+label:has(input:focus-visible) { outline: 3px solid var(--primary); outline-offset: 3px; }
+input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--destructive); }
+input::placeholder, textarea::placeholder { color: var(--muted-foreground); opacity: .8; }
+:where(main, [role="dialog"]) input:not([type="radio"]):not([type="checkbox"]):not([type="range"]):not([type="file"]),
+:where(main, [role="dialog"]) textarea, :where(main, [role="dialog"]) select { border-radius: 12px; }
+html[lang="ar"] .font-heading { letter-spacing: 0; line-height: 1.5; }
+html[lang="ar"] .eyebrow { letter-spacing: 0; }
+@media (min-width: 1024px) { :root { --header-height: 112px; } }
+@media (max-width: 639px) { .page-shell { padding: 28px 16px 48px; } .surface { padding: 20px; } }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }

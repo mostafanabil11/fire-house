@@ -14,12 +14,12 @@ const FAQS: { question: string; answer: React.ReactNode }[] = [
   },
   {
     question: "Where do you deliver?",
-    answer: "Enter your delivery area at checkout to confirm whether your address is currently supported.",
+    answer: "Add your full delivery address at checkout. The restaurant reviews your address when confirming the order.",
   },
   {
     question: "How much is delivery?",
     answer:
-      "The delivery fee is shown clearly at checkout after you enter your delivery area.",
+      "The delivery fee is shown at checkout before you place your order. Eligible orders may qualify for free delivery.",
   },
   {
     question: "Can I cancel my order?",
@@ -30,8 +30,8 @@ const FAQS: { question: string; answer: React.ReactNode }[] = [
           Order History
         </Link>{" "}
         and select Cancel. If preparation has already started, contact the restaurant directly through our{" "}
-        <Link href="/shipping-returns" className="text-foreground underline">
-          delivery information
+        <Link href="/contact" className="text-foreground underline">
+          help
         </Link>{" "}
         page instead.
       </>
@@ -55,7 +55,7 @@ const FAQS: { question: string; answer: React.ReactNode }[] = [
   },
   {
     question: "Can I add a note for the kitchen?",
-    answer: "Yes. Add item-specific notes while customizing a dish and general order notes during checkout.",
+    answer: "Yes. Add item-specific notes while customizing a dish, before adding it to your order.",
   },
   {
     question: "I forgot my password — what do I do?",
@@ -73,16 +73,17 @@ const FAQS: { question: string; answer: React.ReactNode }[] = [
 
 export default function FaqPage() {
   return (
-    <div className="mx-auto w-full max-w-(--spacing-container-max) px-margin-mobile py-stack-xl md:px-margin-desktop">
+    <div className="page-shell py-stack-xl">
       <div className="mx-auto max-w-2xl">
-        <h1 className="mb-12 font-heading text-headline-sm font-bold text-foreground md:text-headline-md">
+        <p className="eyebrow">Help centre</p>
+        <h1 className="mt-2 mb-10 font-heading text-headline-sm font-bold text-foreground md:text-headline-md">
           Frequently Asked Questions
         </h1>
 
-        <div className="divide-y divide-border border-t border-b border-border">
+        <div className="grid gap-3">
           {FAQS.map((faq) => (
-            <details key={faq.question} className="group py-5">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[14px] font-medium text-foreground marker:content-none">
+            <details key={faq.question} className="surface group px-5 py-4 sm:px-6">
+              <summary className="flex min-h-8 cursor-pointer list-none items-center justify-between gap-4 text-[14px] font-bold text-foreground marker:content-none">
                 {faq.question}
                 <span className="shrink-0 text-muted-foreground transition-transform group-open:rotate-45">+</span>
               </summary>

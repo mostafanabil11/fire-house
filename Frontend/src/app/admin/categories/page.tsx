@@ -13,9 +13,10 @@ import {
   type CategoryInput,
 } from "@/lib/api/categories";
 import type { Category } from "@/types/category";
+import { errorMessage } from "@/lib/api/error-message";
 
 const inputClass =
-  "w-full border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-foreground";
+  "w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-foreground";
 const labelClass = "mb-1.5 block text-[11px] font-semibold tracking-[0.1em] text-foreground uppercase";
 
 function CategoryFormFields({
@@ -99,7 +100,7 @@ export default function AdminCategoriesPage() {
       setCreateValue(emptyInput());
       invalidate();
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message ?? "Could not create category"),
+    onError: (err: unknown) => toast.error(errorMessage(err, "Could not create category")),
   });
 
   const updateMutation = useMutation({
@@ -109,13 +110,13 @@ export default function AdminCategoriesPage() {
       setEditingId(null);
       invalidate();
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message ?? "Could not update category"),
+    onError: (err: unknown) => toast.error(errorMessage(err, "Could not update category")),
   });
 
   const toggleActiveMutation = useMutation({
     mutationFn: (cat: Category) => updateCategory(cat._id, { isActive: !cat.isActive }),
     onSuccess: invalidate,
-    onError: (err: any) => toast.error(err?.response?.data?.message ?? "Could not update category"),
+    onError: (err: unknown) => toast.error(errorMessage(err, "Could not update category")),
   });
 
   const deleteMutation = useMutation({
@@ -124,13 +125,13 @@ export default function AdminCategoriesPage() {
       toast.success("Category deleted");
       invalidate();
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message ?? "Could not delete category"),
+    onError: (err: unknown) => toast.error(errorMessage(err, "Could not delete category")),
   });
 
   const reorderMutation = useMutation({
     mutationFn: (items: { id: string; displayOrder: number }[]) => reorderCategories(items),
     onSuccess: invalidate,
-    onError: (err: any) => toast.error(err?.response?.data?.message ?? "Could not reorder"),
+    onError: (err: unknown) => toast.error(errorMessage(err, "Could not reorder")),
   });
 
   function move(siblings: Category[], index: number, direction: -1 | 1) {

@@ -7,6 +7,7 @@ import { Trash2 } from "lucide-react";
 import { getReviewsForModeration, moderateReview, deleteReview } from "@/lib/api/reviews";
 import { StarRating } from "@/components/products/star-rating";
 import type { ReviewStatus } from "@/types/review";
+import { errorMessage } from "@/lib/api/error-message";
 
 const TABS: { label: string; value: ReviewStatus | "" }[] = [
   { label: "Pending", value: "pending" },
@@ -29,13 +30,13 @@ export default function AdminReviewsPage() {
   const moderateMutation = useMutation({
     mutationFn: ({ id, status }: { id: string; status: "approved" | "rejected" }) => moderateReview(id, status),
     onSuccess: invalidate,
-    onError: (err: any) => toast.error(err?.response?.data?.message ?? "Could not update review"),
+    onError: (err: unknown) => toast.error(errorMessage(err, "Could not update review")),
   });
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteReview(id),
     onSuccess: invalidate,
-    onError: (err: any) => toast.error(err?.response?.data?.message ?? "Could not delete review"),
+    onError: (err: unknown) => toast.error(errorMessage(err, "Could not delete review")),
   });
 
   return (

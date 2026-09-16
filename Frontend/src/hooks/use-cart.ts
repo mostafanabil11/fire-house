@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCurrentUser } from "./use-current-user";
+import { useHydrated } from "./use-hydrated";
 import { useCartStore, buildLocalLineId, normalizeNote } from "@/store/cart";
 import type { LocalCartInput } from "@/store/cart";
 import {
@@ -26,7 +27,8 @@ const EMPTY_CART: ResolvedCart = { items: [], subtotal: 0, hasChanges: false };
 // Either way the UI works in terms of an opaque line `key`: the server's line
 // key when signed in, the local deterministic id when not.
 export function useCart() {
-  const { data: user } = useCurrentUser();
+  const { data: user, isLoading: authLoading } = useCurrentUser();
+  const hydrated = useHydrated();
   const isAuthenticated = !!user;
   const queryClient = useQueryClient();
 
@@ -57,7 +59,7 @@ export function useCart() {
   const localValidateQuery = useQuery({
     queryKey: ["cart", "local-validate", localValidationKey],
     queryFn: () => validateCart(localSelections),
-    enabled: !isAuthenticated && localItems.length > 0,
+    enabled: hydrated && !authLoading && !isAuthenticated && localItems.length > 0,
   });
 
   const cart: ResolvedCart = useMemo(() => {
@@ -83,7 +85,10 @@ export function useCart() {
     };
   }, [isAuthenticated, serverCartQuery.data, localValidateQuery.data, localItems]);
 
-  const isLoading = isAuthenticated ? serverCartQuery.isLoading : localValidateQuery.isFetching;
+  const isLoading = !hydrated || authLoading || (isAuthenticated ? serverCartQuery.isLoading : localValidateQuery.isFetching);
+  // A 401 from the profile endpoint simply means this is a guest. Only the
+  // active cart source is considered a cart error.
+  const isError = isAuthenticated ? serverCartQuery.isError : localValidateQuery.isError;
 
   const addItemMutation = useMutation({
     mutationFn: (selection: CartSelection) => addServerCartItem(selection),
@@ -102,11 +107,11 @@ export function useCart() {
   });
 
   // `display` is what the guest cart shows before the server has answered.
-  function addItem(selection: CartSelection, display: Pick<LocalCartInput, "slug" | "name" | "image" | "price">) {
+  async function addItem(selection: CartSelection, display: Pick<LocalCartInput, "slug" | "name" | "image" | "price">) {
     const normalized: CartSelection = { ...selection, note: normalizeNote(selection.note) };
 
     if (isAuthenticated) {
-      addItemMutation.mutate(normalized);
+      await addItemMutation.mutateAsync(normalized);
     } else {
       localAddItem({ ...normalized, ...display });
     }
@@ -133,6 +138,8 @@ export function useCart() {
   return {
     cart,
     isLoading,
+    isError,
+    retry: () => isAuthenticated ? serverCartQuery.refetch() : localValidateQuery.refetch(),
     isAuthenticated,
     itemCount,
     addItem,

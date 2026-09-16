@@ -1,4 +1,7 @@
 "use client";
+import { useState } from "react";
+import { validPhone } from "@/lib/checkout-validation";
+import { T } from "@/i18n/language-provider";
 
 export interface AddressFormValues {
   firstName: string;
@@ -45,6 +48,8 @@ export function AddressFormFields({
   idPrefix?: string;
   disabled?: boolean;
 }) {
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const errors = { phone: !validPhone(value.phone), firstName: !value.firstName.trim(), lastName: !value.lastName.trim(), addressLine: !value.addressLine.trim() };
   function set<K extends keyof AddressFormValues>(key: K, v: AddressFormValues[K]) {
     onChange({ ...value, [key]: v });
   }
@@ -60,6 +65,10 @@ export function AddressFormFields({
           type="tel"
           inputMode="tel"
           required
+          maxLength={30}
+          aria-invalid={touched.phone && errors.phone}
+          aria-describedby={`${idPrefix}-phone-help`}
+          onBlur={() => setTouched(current => ({...current, phone:true}))}
           disabled={disabled}
           autoComplete="tel"
           placeholder="01xxxxxxxxx"
@@ -67,8 +76,8 @@ export function AddressFormFields({
           onChange={(e) => set("phone", e.target.value)}
           className={inputClass}
         />
-        <p className="mt-1.5 text-xs text-muted-foreground">
-          The rider calls this number when they arrive.
+        <p id={`${idPrefix}-phone-help`} className={`mt-1.5 text-xs ${touched.phone && errors.phone ? "text-destructive" : "text-muted-foreground"}`}>
+          <T>{touched.phone && errors.phone ? "Enter a valid mobile number." : "The rider calls this number when they arrive."}</T>
         </p>
       </div>
 
@@ -79,6 +88,9 @@ export function AddressFormFields({
           </label>
           <input
             id={`${idPrefix}-firstName`}
+            maxLength={100}
+            aria-invalid={touched.firstName && errors.firstName}
+            onBlur={() => setTouched(current => ({...current, firstName:true}))}
             required
             disabled={disabled}
             autoComplete="given-name"
@@ -93,6 +105,9 @@ export function AddressFormFields({
           </label>
           <input
             id={`${idPrefix}-lastName`}
+            maxLength={100}
+            aria-invalid={touched.lastName && errors.lastName}
+            onBlur={() => setTouched(current => ({...current, lastName:true}))}
             required
             disabled={disabled}
             autoComplete="family-name"
@@ -109,6 +124,9 @@ export function AddressFormFields({
         </label>
         <textarea
           id={`${idPrefix}-addressLine`}
+          maxLength={300}
+          aria-invalid={touched.addressLine && errors.addressLine}
+          onBlur={() => setTouched(current => ({...current, addressLine:true}))}
           required
           disabled={disabled}
           autoComplete="street-address"

@@ -3,14 +3,18 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useMutation } from "@tanstack/react-query";
-import { Search, Loader2 } from "lucide-react";
+import { Search, Loader2, RefreshCw, ReceiptText } from "lucide-react";
+import { isAxiosError } from "axios";
+import { T } from "@/i18n/language-provider";
+import { OrderProgress } from "@/components/orders/order-progress";
+import { OrderStatusBadge } from "@/components/orders/order-status-badge";
 import { lookupOrder, getOrderToken } from "@/lib/api/orders";
 import { OrderDetail } from "@/components/orders/order-detail";
 import type { Order } from "@/types/order";
 
 const inputClass =
-  "w-full border border-border bg-background px-4 py-3 text-sm text-foreground outline-none focus:border-foreground";
-const labelClass = "mb-2 block text-[12px] font-semibold tracking-[0.1em] text-foreground uppercase";
+  "form-field";
+const labelClass = "mb-2 block text-sm font-bold";
 
 // Lets anyone who ordered — guest or member — reach an order with the pair of
 // things only they should have: the order number and the email it was placed
@@ -28,12 +32,12 @@ export default function TrackOrderPage() {
       setOrder(found);
       setError(null);
     },
-    onError: (err: any) => {
+    onError: (err: unknown) => {
       setOrder(null);
       // The server deliberately can't distinguish "no such order" from "not
       // yours", so neither can this message.
       setError(
-        err?.response?.status === 429
+        isAxiosError(err) && err.response?.status === 429
           ? "Too many attempts — please wait a minute and try again."
           : "We couldn't find an order with that number and email address.",
       );
@@ -41,8 +45,9 @@ export default function TrackOrderPage() {
   });
 
   return (
-    <div className="mx-auto w-full max-w-(--spacing-container-max) px-margin-mobile py-stack-xl md:px-margin-desktop">
-      <div className="mx-auto max-w-xl">
+    <div className="page-shell">
+      <div className="surface mx-auto max-w-xl">
+        <span className="mb-5 grid size-12 place-items-center rounded-2xl bg-secondary text-primary"><ReceiptText className="size-5" aria-hidden /></span>
         <h1 className="mb-2 font-heading text-headline-md font-bold text-foreground">Track Your Order</h1>
         <p className="mb-8 text-body-md text-muted-foreground">
           Enter your order number and the email address you used at checkout.
@@ -62,7 +67,8 @@ export default function TrackOrderPage() {
             <input
               id="track-orderNumber"
               required
-              placeholder="VLT-20260819-0001"
+              placeholder="Your order number"
+              autoComplete="off"
               value={orderNumber}
               onChange={(e) => setOrderNumber(e.target.value.toUpperCase())}
               disabled={mutation.isPending}
@@ -89,7 +95,7 @@ export default function TrackOrderPage() {
           <button
             type="submit"
             disabled={!orderNumber.trim() || !email.trim() || mutation.isPending}
-            className="flex w-full items-center justify-center gap-2 bg-primary py-4 text-button font-medium tracking-[0.05em] text-primary-foreground uppercase transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="action-primary w-full"
           >
             {mutation.isPending ? (
               <Loader2 className="size-4 animate-spin" strokeWidth={2} />
@@ -101,7 +107,7 @@ export default function TrackOrderPage() {
         </form>
 
         {error && (
-          <p className="mt-4 border border-destructive/30 bg-destructive/5 px-4 py-3 text-[13px] text-destructive">
+          <p role="alert" className="mt-4 rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
             {error}
           </p>
         )}
@@ -109,6 +115,11 @@ export default function TrackOrderPage() {
 
       {order && (
         <div className="mt-12">
+          <section className="surface mx-auto mb-7 max-w-3xl" aria-label="Order progress">
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-4"><div><p className="eyebrow"><T>Your order</T></p><h2 className="mt-1 font-heading text-xl"><bdi>{order.orderNumber}</bdi></h2></div><OrderStatusBadge fulfillmentStatus={order.fulfillmentStatus} paymentStatus={order.paymentStatus} /></div>
+            <OrderProgress status={order.fulfillmentStatus} />
+            <button type="button" onClick={() => mutation.mutate()} disabled={mutation.isPending} className="action-secondary mt-6"><RefreshCw className={`size-4 ${mutation.isPending ? 'animate-spin' : ''}`} aria-hidden /><T>Refresh status</T></button>
+          </section>
           {/* Cancelling needs the checkout token (or an account), not just the
               number-and-email pair that got us this far — see OrderDetail. */}
           <OrderDetail order={order} canCancel={!!getOrderToken(order.orderNumber)} />

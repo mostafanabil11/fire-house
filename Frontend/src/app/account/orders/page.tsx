@@ -30,15 +30,16 @@ export default function OrderHistoryPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-(--spacing-container-max) px-margin-mobile py-stack-xl md:px-margin-desktop">
-      <h1 className="mb-12 font-heading text-headline-sm font-bold text-foreground md:text-headline-md">
+    <div className="page-shell py-stack-xl">
+      <p className="eyebrow">Your account</p>
+      <h1 className="mt-2 mb-10 font-heading text-headline-sm font-bold text-foreground md:text-headline-md">
         Order History
       </h1>
 
       {isLoading ? (
         <div className="space-y-4">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-24 animate-pulse bg-muted" />
+            <div key={i} className="h-28 animate-pulse rounded-2xl bg-muted" />
           ))}
         </div>
       ) : !orders || orders.length === 0 ? (
@@ -46,18 +47,18 @@ export default function OrderHistoryPage() {
           <p className="mb-8 text-body-lg text-muted-foreground">You haven&apos;t placed any orders yet.</p>
           <Link
             href="/"
-            className="bg-primary px-8 py-4 text-button font-medium tracking-[0.05em] text-primary-foreground uppercase transition-colors hover:bg-primary/90"
+            className="action-primary"
           >
             Start Shopping
           </Link>
         </div>
       ) : (
-        <div className="divide-y divide-border border-t border-b border-border">
+        <div className="grid gap-3">
           {orders.map((order) => (
             <Link
               key={order.orderNumber}
               href={`/account/orders/${order.orderNumber}`}
-              className="flex flex-col gap-3 py-6 transition-colors hover:bg-muted/50 md:flex-row md:items-center md:justify-between"
+              className="surface flex flex-col gap-3 p-5 transition-colors hover:border-foreground/25 hover:bg-muted/30 md:flex-row md:items-center md:justify-between"
             >
               <div>
                 <p className="text-body-md font-medium text-foreground">{order.orderNumber}</p>

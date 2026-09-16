@@ -189,10 +189,11 @@ production mode.
 
 ## Notes
 
-Product and category images are currently served by the frontend itself out of
-`Frontend/public/images`. `next.config.ts` allows `localhost:3101` as an image
-origin and sets `dangerouslyAllowLocalIP` to work around Next.js's SSRF guard in
-development — both need replacing with the real image host before deploying.
+Product and category images are served by the frontend itself out of
+`Frontend/public/images`, as root-relative paths. Nothing is fetched from another
+origin, so `next.config.ts` needs no `remotePatterns` — deployed, Vercel serves
+and optimizes these files like any other static asset. Moving the photos to an
+image host later means adding that host to `remotePatterns`.
 
 `products_imgs/` at the repo root holds the original source photography and is
 not used at runtime.

@@ -1,35 +1,47 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getStoreSettingsClient, updateStoreSettings } from "@/lib/api/settings";
+import { errorMessage } from "@/lib/api/error-message";
+import type { StoreSettings } from "@/types/settings";
 
 const inputClass =
   "w-full rounded-2xl border border-border bg-background px-4 py-3 text-base text-foreground outline-none transition-colors focus:border-foreground";
 const labelClass = "mb-1.5 block text-sm font-bold text-foreground";
 
 export default function AdminSettingsPage() {
-  const queryClient = useQueryClient();
   const { data: settings, isLoading } = useQuery({
     queryKey: ["settings"],
     queryFn: getStoreSettingsClient,
   });
 
-  const [currency, setCurrency] = useState("EGP");
-  const [taxRatePercent, setTaxRatePercent] = useState("0");
-  const [freeShippingThreshold, setFreeShippingThreshold] = useState("0");
-  const [flatShippingRate, setFlatShippingRate] = useState("0");
-  const [instapayAddress, setInstapayAddress] = useState("");
+  return (
+    <div>
+      <p className="eyebrow">Store controls</p>
+      <h1 className="mt-2 font-heading text-3xl font-black tracking-tight">Settings</h1>
 
-  useEffect(() => {
-    if (!settings) return;
-    setCurrency(settings.currency);
-    setTaxRatePercent(String(settings.taxRateBasisPoints / 100));
-    setFreeShippingThreshold(String(settings.freeShippingThresholdMinorUnits / 100));
-    setFlatShippingRate(String(settings.flatShippingRateMinorUnits / 100));
-    setInstapayAddress(settings.instapayAddress);
-  }, [settings]);
+      {isLoading || !settings ? (
+        <div className="mt-6 h-64 max-w-lg animate-pulse rounded-2xl bg-muted" />
+      ) : (
+        <AdminSettingsForm key={JSON.stringify(settings)} settings={settings} />
+      )}
+    </div>
+  );
+}
+
+function AdminSettingsForm({ settings }: { settings: StoreSettings }) {
+  const queryClient = useQueryClient();
+  const [currency, setCurrency] = useState(settings.currency);
+  const [taxRatePercent, setTaxRatePercent] = useState(String(settings.taxRateBasisPoints / 100));
+  const [freeShippingThreshold, setFreeShippingThreshold] = useState(
+    String(settings.freeShippingThresholdMinorUnits / 100),
+  );
+  const [flatShippingRate, setFlatShippingRate] = useState(
+    String(settings.flatShippingRateMinorUnits / 100),
+  );
+  const [instapayAddress, setInstapayAddress] = useState(settings.instapayAddress);
 
   const mutation = useMutation({
     mutationFn: () =>
@@ -44,26 +56,16 @@ export default function AdminSettingsPage() {
       queryClient.setQueryData(["settings"], updated);
       toast.success("Settings updated");
     },
-    onError: (err: unknown) => {
-      const message = (err as { response?: { data?: { message?: string } } })?.response?.data
-        ?.message;
-      toast.error(message ?? "Could not update settings");
-    },
+    onError: (err: unknown) => toast.error(errorMessage(err, "Could not update settings")),
   });
 
   return (
-    <div>
-      <h1 className="font-heading text-2xl font-black tracking-tight">Settings</h1>
-
-      {isLoading || !settings ? (
-        <div className="mt-6 h-64 max-w-lg animate-pulse rounded-2xl bg-muted" />
-      ) : (
-        <form
+    <form
           onSubmit={(e) => {
             e.preventDefault();
             mutation.mutate();
           }}
-          className="mt-6 max-w-lg space-y-6"
+          className="mt-6 max-w-xl space-y-6"
         >
           <section className="rounded-2xl border border-border bg-card p-5">
             <h2 className="font-heading text-lg font-black">Payment</h2>
@@ -165,8 +167,6 @@ export default function AdminSettingsPage() {
           >
             {mutation.isPending ? "Saving…" : "Save settings"}
           </button>
-        </form>
-      )}
-    </div>
+    </form>
   );
 }

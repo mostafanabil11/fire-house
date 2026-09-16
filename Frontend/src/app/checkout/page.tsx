@@ -25,12 +25,15 @@ import { CouponField } from "@/components/checkout/coupon-field";
 import { PaymentSection, type PaymentMethodType } from "@/components/checkout/payment-section";
 import { CartChangedBanner } from "@/components/products/cart-changed-banner";
 import { RESTAURANT } from "@/config/restaurant";
+import { validEmail, validPhone } from "@/lib/checkout-validation";
+import { T } from "@/i18n/language-provider";
+import { PageSkeleton, PageState } from "@/components/ui/page-state";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { data: user, isLoading: userLoading } = useCurrentUser();
-  const { cart, isLoading: cartLoading } = useCart();
+  const { cart, isLoading: cartLoading, isError: cartError, retry: retryCart } = useCart();
   const clearLocalCart = useCartStore((s) => s.clear);
   const { coupon, setCoupon } = useAppliedCoupon();
 
@@ -59,12 +62,7 @@ export default function CheckoutPage() {
   const addressesQuery = useQuery({ queryKey: ["addresses"], queryFn: getAddresses, enabled: !!user });
   const settingsQuery = useQuery({ queryKey: ["settings"], queryFn: getStoreSettingsClient });
 
-  useEffect(() => {
-    if (!selectedAddressId && addressesQuery.data && addressesQuery.data.length > 0) {
-      const defaultAddress = addressesQuery.data.find((a) => a.isDefault) ?? addressesQuery.data[0];
-      setSelectedAddressId(defaultAddress._id);
-    }
-  }, [addressesQuery.data, selectedAddressId]);
+  const effectiveAddressId = selectedAddressId ?? addressesQuery.data?.find(address => address.isDefault)?._id ?? addressesQuery.data?.[0]?._id ?? null;
 
   useEffect(() => {
     // Waits for auth to resolve because until it does we don't yet know which
@@ -72,10 +70,10 @@ export default function CheckoutPage() {
     // indistinguishable from a genuinely empty order.
     // Also skipped once a payment session exists: the cart legitimately still
     // has items while the customer is mid-payment.
-    if (!orderPlaced && !session && !userLoading && !cartLoading && cart.items.length === 0) {
+    if (!orderPlaced && !session && !userLoading && !cartLoading && !cartError && cart.items.length === 0) {
       router.replace("/cart");
     }
-  }, [orderPlaced, session, userLoading, cartLoading, cart.items.length, router]);
+  }, [orderPlaced, session, userLoading, cartLoading, cartError, cart.items.length, router]);
 
   const deliveryFee = useMemo(() => {
     if (!settingsQuery.data) return null;
@@ -148,7 +146,7 @@ export default function CheckoutPage() {
         paymentReference: paymentMethod === "instapay" ? paymentReference.trim() : null,
         couponCode: coupon?.code ?? null,
         ...(user
-          ? { addressId: selectedAddressId }
+          ? { addressId: effectiveAddressId }
           : {
               email: guestEmail.trim(),
               shippingAddress: guestAddress,
@@ -202,26 +200,27 @@ export default function CheckoutPage() {
   // Only waits for auth to resolve — not for a session to exist. Rendering
   // before it settles would flash the guest form at a signed-in customer.
   if (userLoading) {
-    return null;
+    return <PageSkeleton />;
   }
 
   // A member needs a saved address selected; a guest needs the fields they
   // typed to be complete. Both are re-validated server-side — this only
   // decides whether the button is worth enabling.
   const guestDetailsComplete =
-    guestEmail.trim().length > 3 &&
+    validEmail(guestEmail) &&
     guestAddress.firstName.trim() !== "" &&
     guestAddress.lastName.trim() !== "" &&
-    guestAddress.phone.trim() !== "" &&
+    validPhone(guestAddress.phone) &&
     guestAddress.addressLine.trim() !== "";
 
-  const deliveryReady = user ? !!selectedAddressId : guestDetailsComplete;
+  const deliveryReady = user ? !!effectiveAddressId : guestDetailsComplete;
   const paymentReady = paymentMethod !== "instapay" || paymentReference.trim().length >= 3;
 
   const canPlaceOrder =
     deliveryReady &&
     paymentReady &&
     cartIsClean &&
+    !cartLoading && !cartError && cart.items.length > 0 &&
     total !== null &&
     !placeOrderMutation.isPending &&
     !session;
@@ -232,9 +231,14 @@ export default function CheckoutPage() {
       ? "Continue to payment"
       : "Place order";
 
+  if (cartError) return <div className="page-shell"><PageState title="We couldn't load your order" description="Your selections are saved. Please try again." onRetry={retryCart} /></div>;
+  if (cartLoading && !cart.items.length) return <PageSkeleton />;
+  const guidance = !deliveryReady ? (user ? "Choose a delivery address to continue." : "Complete your name, mobile number, address and email to continue.") : !paymentReady ? "Enter your payment reference to continue." : settingsQuery.isError ? "Delivery pricing could not be loaded. Please retry." : total === null ? "Loading delivery pricing…" : !cartIsClean ? "Please review the changes to your order." : "Review your details before placing your order.";
+
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pt-6 pb-40 sm:px-6 lg:pb-16">
       <h1 className="font-heading text-3xl font-black tracking-[-0.04em] sm:text-4xl">Checkout</h1>
+      <nav aria-label="Order steps" className="mt-3 flex flex-wrap items-center gap-3 text-xs font-semibold text-muted-foreground"><Link href="/menu"><T>Menu</T></Link><span aria-hidden>/</span><Link href="/cart"><T>Your order</T></Link><span aria-hidden>/</span><span aria-current="step" className="text-primary"><T>Checkout</T></span></nav>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[1.6fr_1fr] lg:items-start lg:gap-6">
         <div className="grid gap-4">
@@ -247,7 +251,7 @@ export default function CheckoutPage() {
             {user ? (
               <AddressSection
                 addresses={addressesQuery.data ?? []}
-                selectedId={selectedAddressId}
+                selectedId={effectiveAddressId}
                 onSelect={setSelectedAddressId}
               />
             ) : (
@@ -275,7 +279,7 @@ export default function CheckoutPage() {
               </div>
               <p className="shrink-0 text-sm font-black">
                 {deliveryFee === null
-                  ? "—"
+                  ? "Loading…"
                   : deliveryFee === 0
                     ? "Free"
                     : formatPrice(deliveryFee)}
@@ -302,13 +306,13 @@ export default function CheckoutPage() {
             />
           </CheckoutCard>
 
-          <CheckoutCard title="Promo code" icon={<Tag className="size-5" strokeWidth={2.25} />}>
+          <details className="rounded-2xl border bg-card p-5"><summary className="flex min-h-10 cursor-pointer items-center gap-2 text-sm font-bold"><Tag className="size-4 text-primary" aria-hidden /><T>Have a promo code?</T></summary><div className="pt-3">
             <CouponField
               items={cart.items}
               isAuthenticated={!!user}
               guestEmail={user ? null : guestEmail.trim()}
             />
-          </CheckoutCard>
+          </div></details>
         </div>
 
         {/* The order itself stays visible beside the form on a large screen and
@@ -322,7 +326,7 @@ export default function CheckoutPage() {
               Edit
             </Link>
           }
-          className="lg:sticky lg:top-28"
+          className="lg:sticky lg:top-[calc(var(--header-height)+24px)]"
         >
           <OrderSummary
             items={cart.items}
@@ -332,6 +336,9 @@ export default function CheckoutPage() {
             couponCode={coupon?.code ?? null}
             total={total}
           />
+
+          <p id="checkout-guidance" role="status" className="mt-4 text-xs leading-6 text-muted-foreground"><T>{guidance}</T></p>
+          {settingsQuery.isError && <button type="button" onClick={() => settingsQuery.refetch()} className="action-secondary mt-3"><T>Retry delivery pricing</T></button>}
 
           {session ? (
             <p className="mt-5 rounded-2xl bg-muted p-4 text-sm text-muted-foreground">
@@ -356,7 +363,8 @@ export default function CheckoutPage() {
           is always on screen — not a submit button at the bottom of a long
           form the customer has to scroll back to. */}
       {!session && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 p-4 backdrop-blur-md lg:hidden">
+        <div className="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 p-3 backdrop-blur-md lg:hidden">
+          {!canPlaceOrder && <p className="mb-2 text-center text-[11px] leading-5 text-muted-foreground"><T>{guidance}</T></p>}
           <button
             type="button"
             onClick={() => placeOrderMutation.mutate()}

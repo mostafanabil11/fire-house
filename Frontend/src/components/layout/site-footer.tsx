@@ -1,73 +1,24 @@
 import Link from "next/link";
+import { Flame, ArrowUpRight } from "lucide-react";
+import { T } from "@/i18n/language-provider";
 import { RESTAURANT } from "@/config/restaurant";
-
-const ORDER_LINKS = [
-  { href: "/menu", label: "Menu" },
-  { href: "/cart", label: "Your order" },
-  { href: "/track-order", label: "Track order" },
-];
-
-const HELP_LINKS = [
-  { href: "/contact", label: "Contact" },
-  { href: "/faq", label: "FAQ" },
-  { href: "/shipping-returns", label: "Delivery" },
-];
-
-const LEGAL_LINKS = [
-  { href: "/terms", label: "Terms" },
-  { href: "/privacy", label: "Privacy" },
-];
-
 export function SiteFooter() {
-  return (
-    <footer className="border-t border-border bg-foreground text-background">
-      <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
-        <div className="grid gap-10 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
-          <div>
-            <p className="font-heading text-2xl font-black tracking-tight uppercase">
-              {RESTAURANT.name}
-            </p>
-            <p className="mt-2 max-w-sm text-sm leading-6 text-background/65">
-              Order directly from the restaurant. Your order is confirmed and prepared by our own
-              team — no middleman, no extra fees.
-            </p>
-          </div>
-
-          <FooterColumn title="Order" links={ORDER_LINKS} />
-          <FooterColumn title="Help" links={HELP_LINKS} />
-          <FooterColumn title="Legal" links={LEGAL_LINKS} />
+  return <footer className="mt-auto bg-foreground text-background">
+    <div className="mx-auto max-w-7xl px-5 pt-10 pb-24 sm:px-6 md:pb-7">
+      <div className="grid gap-8 md:grid-cols-[1.6fr_1fr_1fr] md:gap-16">
+        <div><p className="flex items-center gap-2 font-heading text-2xl"><Flame className="size-6 text-[#f68b60]" aria-hidden /><T>{RESTAURANT.name}</T></p><p className="mt-3 max-w-xs text-sm leading-7 text-background/65"><T>Good food, made your way. Order directly from our kitchen for your next favourite meal.</T></p></div>
+        <div className="grid grid-cols-2 gap-6 md:contents">
+          <FooterColumn title="Your next meal" links={[["/menu","Menu"],["/cart","Your order"],["/track-order","Track order"],["/account/orders","My orders"]]} />
+          <FooterColumn title="Here to help" links={[["/contact","Contact"],["/faq","FAQ"],["/shipping-returns","Delivery information"]]} />
         </div>
-
-        <p className="mt-10 border-t border-background/15 pt-6 text-xs text-background/55">
-          © {new Date().getFullYear()} {RESTAURANT.name}. All rights reserved.
-        </p>
       </div>
-    </footer>
-  );
-}
-
-function FooterColumn({
-  title,
-  links,
-}: {
-  title: string;
-  links: { href: string; label: string }[];
-}) {
-  return (
-    <div>
-      <p className="text-xs font-black tracking-[0.14em] text-background/50 uppercase">{title}</p>
-      <ul className="mt-3">
-        {links.map((link) => (
-          <li key={link.href}>
-            <Link
-              href={link.href}
-              className="flex min-h-10 items-center text-sm font-semibold text-background/85 transition-colors hover:text-primary"
-            >
-              {link.label}
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-white/15 pt-5 text-[11px] text-background/65">
+        <p>© {new Date().getFullYear()} <T>{RESTAURANT.name}</T>. <T>All rights reserved.</T></p>
+        <div className="flex flex-wrap gap-5"><Link href="/terms" className="py-2 hover:text-white"><T>Terms</T></Link><Link href="/privacy" className="py-2 hover:text-white"><T>Privacy</T></Link>{RESTAURANT.instagram && <a href={RESTAURANT.instagram} target="_blank" rel="noopener noreferrer">Instagram</a>}{RESTAURANT.facebook && <a href={RESTAURANT.facebook} target="_blank" rel="noopener noreferrer">Facebook</a>}</div>
+      </div>
     </div>
-  );
+  </footer>;
+}
+function FooterColumn({title,links}:{title:string;links:string[][]}) {
+ return <div><h2 className="mb-3 text-xs font-bold text-background/50"><T>{title}</T></h2><ul>{links.map(([href,label])=><li key={href}><Link href={href} className="group inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-background/85 hover:text-white"><T>{label}</T><ArrowUpRight className="size-3 opacity-0 transition-opacity group-hover:opacity-100" aria-hidden /></Link></li>)}</ul></div>;
 }

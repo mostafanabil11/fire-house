@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 import { getCoupons, deleteCoupon } from "@/lib/api/coupons";
 import { formatPrice } from "@/lib/format";
+import { errorMessage } from "@/lib/api/error-message";
 
 function describeCoupon(c: { type: string; value: number }): string {
   if (c.type === "percentage") return `${c.value}% off`;
@@ -23,7 +24,7 @@ export default function AdminCouponsPage() {
       toast.success("Coupon deleted");
       queryClient.invalidateQueries({ queryKey: ["admin", "coupons"] });
     },
-    onError: (err: any) => toast.error(err?.response?.data?.message ?? "Could not delete coupon"),
+    onError: (err: unknown) => toast.error(errorMessage(err, "Could not delete coupon")),
   });
 
   return (

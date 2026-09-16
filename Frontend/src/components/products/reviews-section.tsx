@@ -7,6 +7,7 @@ import { Star } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { getReviewsForProduct, createReview } from "@/lib/api/reviews";
 import { StarRating } from "./star-rating";
+import { errorMessage } from "@/lib/api/error-message";
 
 function StarInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
@@ -52,13 +53,13 @@ export function ReviewsSection({ productId, averageRating, reviewCount }: { prod
       setRating(5);
       queryClient.invalidateQueries({ queryKey: ["reviews", productId] });
     },
-    onError: (err: any) => {
-      toast.error(err?.response?.data?.message ?? "Could not submit review");
+    onError: (err: unknown) => {
+      toast.error(errorMessage(err, "Could not submit review"));
     },
   });
 
   const inputClass =
-    "w-full border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:border-foreground";
+    "w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-foreground";
 
   return (
     <section className="mx-auto w-full max-w-(--spacing-container-max) border-t border-border px-margin-mobile py-stack-lg md:px-margin-desktop">

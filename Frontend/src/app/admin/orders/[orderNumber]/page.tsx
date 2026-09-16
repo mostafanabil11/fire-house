@@ -5,14 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-  ChevronLeft,
-  MapPin,
-  MessageCircle,
-  Phone,
-  StickyNote,
-  UtensilsCrossed,
-} from "lucide-react";
+import { ChevronLeft, MapPin, Phone, StickyNote, User, UtensilsCrossed } from "lucide-react";
+import { WhatsAppIcon } from "@/components/icons/social-icons";
 import { getAdminOrder, updateOrderStatus } from "@/lib/api/orders";
 import { formatPrice } from "@/lib/format";
 import { paymentSummaryLabel } from "@/lib/payment-label";
@@ -88,35 +82,50 @@ export default function AdminOrderDetailPage() {
         <div className="grid gap-4">
           {/* Contact first: staff reach for the phone before anything else. */}
           <section className="rounded-2xl border border-border bg-card p-5">
-            <h2 className="font-heading text-lg font-black">{name}</h2>
-            {email && <p className="mt-0.5 text-sm text-muted-foreground">{email}</p>}
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {chat ? (
+            <div className="flex items-center gap-2 rounded-xl border border-border bg-muted/40 py-2.5 ps-4 pe-2.5">
+              <div className="grid min-w-0 flex-1 gap-1.5 sm:grid-cols-2 sm:gap-4">
+                <p className="flex min-w-0 items-center gap-2.5 text-base font-bold">
+                  <User className="size-5 shrink-0 text-muted-foreground" strokeWidth={2} aria-hidden />
+                  <span className="truncate">{name}</span>
+                </p>
+                {call ? (
+                  <a
+                    href={call}
+                    className="flex min-w-0 items-center gap-2.5 text-base font-bold transition-colors hover:text-primary"
+                  >
+                    <Phone className="size-5 shrink-0 text-muted-foreground" strokeWidth={2} aria-hidden />
+                    <span dir="ltr" data-i18n-ignore className="truncate tracking-wide tabular-nums">
+                      {phone}
+                    </span>
+                  </a>
+                ) : (
+                  <p className="flex min-w-0 items-center gap-2.5 text-base font-bold text-muted-foreground">
+                    <Phone className="size-5 shrink-0" strokeWidth={2} aria-hidden />
+                    <span dir="ltr" data-i18n-ignore className="truncate">
+                      {phone}
+                    </span>
+                  </p>
+                )}
+              </div>
+              {chat && (
                 <a
                   href={chat}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full bg-[#25D366] px-5 text-sm font-black text-white sm:flex-none"
+                  className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-lg bg-[#25D366] px-4 text-sm font-bold text-white transition hover:brightness-105"
                 >
-                  <MessageCircle className="size-4" strokeWidth={2.5} aria-hidden />
+                  <WhatsAppIcon className="size-5" aria-hidden />
                   WhatsApp
-                </a>
-              ) : (
-                <span className="text-sm text-muted-foreground">
-                  {phone} — not a number we can message
-                </span>
-              )}
-              {call && (
-                <a
-                  href={call}
-                  className="inline-flex min-h-12 flex-1 items-center justify-center gap-2 rounded-full border border-border px-5 text-sm font-bold sm:flex-none"
-                >
-                  <Phone className="size-4" strokeWidth={2.5} aria-hidden />
-                  {phone}
                 </a>
               )}
             </div>
+
+            {!call && (
+              <p className="mt-2 text-xs font-bold text-muted-foreground">
+                Not a valid number — dial it by hand
+              </p>
+            )}
+            {email && <p className="mt-2 text-sm text-muted-foreground">{email}</p>}
 
             <div className="mt-4 flex items-start gap-2.5 border-t border-border pt-4">
               <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" strokeWidth={2} />
@@ -233,7 +242,7 @@ export default function AdminOrderDetailPage() {
               type="button"
               onClick={() => confirmOrder(order)}
               disabled={confirming}
-              className="mt-4 min-h-13 w-full rounded-full bg-primary text-sm font-black text-primary-foreground disabled:opacity-50"
+              className="mt-4 min-h-13 w-full rounded-full bg-primary text-sm font-black text-primary-foreground transition enabled:hover:-translate-y-0.5 enabled:hover:brightness-110 enabled:active:translate-y-0 disabled:opacity-50"
             >
               {confirming ? "Confirming…" : "Confirm order"}
             </button>

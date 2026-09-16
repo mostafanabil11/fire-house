@@ -10,9 +10,9 @@ import { STAFF_QUEUES, queueStatuses, type StaffQueue } from "@/lib/staff-orders
 
 // Slow enough not to hammer a free-tier API, fast enough that nobody is
 // standing at the counter wondering whether the order arrived. The board also
-// refetches the moment the tab is looked at again, which covers the case that
-// actually matters: a phone waking up in someone's pocket.
-const POLL_MS = 15_000;
+// refetches the moment the tab is looked at again, which covers a phone waking
+// up in someone's pocket.
+const POLL_MS = 10_000;
 
 export default function AdminOrdersPage() {
   const queryClient = useQueryClient();
@@ -36,6 +36,10 @@ export default function AdminOrdersPage() {
         ...(debouncedSearch ? { q: debouncedSearch } : {}),
       }),
     refetchInterval: POLL_MS,
+    // Keep polling while the tab is hidden. The chime and desktop notification
+    // exist for exactly that moment — staff on another tab or with the browser
+    // minimised — and without this the board goes quiet until someone looks.
+    refetchIntervalInBackground: true,
     refetchOnWindowFocus: true,
     // Keeps the previous tab's cards on screen while the next one loads,
     // instead of blanking the board on every tab press.
@@ -68,12 +72,25 @@ export default function AdminOrdersPage() {
     };
   }, [unseenCount]);
 
-  const orders = data?.items ?? [];
+  const orders = useMemo(() => {
+    const items = data?.items ?? [];
+    if (queue !== "waiting") return items;
+
+    // The order that has waited longest is always first. Staff should never
+    // have to scan the board to work out which customer needs attention next.
+    return items.toSorted(
+      (first, second) =>
+        new Date(first.createdAt).getTime() - new Date(second.createdAt).getTime(),
+    );
+  }, [data?.items, queue]);
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-heading text-2xl font-black tracking-tight">Orders</h1>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="eyebrow">Live service queue</p>
+          <h1 className="mt-1 font-heading text-3xl font-black tracking-tight">Orders</h1>
+        </div>
 
         <div className="flex items-center gap-2">
           {unseenCount > 0 && (
@@ -135,7 +152,7 @@ export default function AdminOrdersPage() {
         </div>
       </div>
 
-      <p className="mt-1 text-xs text-muted-foreground">
+      <p className="mt-2 text-xs text-muted-foreground">
         Updates by itself every {POLL_MS / 1000} seconds
         {dataUpdatedAt
           ? ` · last checked ${new Date(dataUpdatedAt).toLocaleTimeString([], {
@@ -176,7 +193,7 @@ export default function AdminOrdersPage() {
         />
       </label>
 
-      <div className="mt-4 grid gap-3">
+      <div className="mt-4 grid items-start gap-3">
         {isLoading ? (
           Array.from({ length: 3 }).map((_, index) => (
             <div key={index} className="h-36 animate-pulse rounded-2xl bg-muted" />
@@ -193,7 +210,13 @@ export default function AdminOrdersPage() {
             </p>
           </div>
         ) : (
-          orders.map((order) => <OrderCard key={order._id} order={order} />)
+          orders.map((order, index) => (
+            <OrderCard
+              key={order._id}
+              order={order}
+              queuePosition={queue === "waiting" ? index + 1 : undefined}
+            />
+          ))
         )}
       </div>
 

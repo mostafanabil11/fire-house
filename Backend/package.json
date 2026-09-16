@@ -18,6 +18,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "seed:menu:inspect": "ts-node -r tsconfig-paths/register src/database/seeds/restaurant-menu.seed.ts",
+    "seed:menu:images": "ts-node -r tsconfig-paths/register src/database/seeds/restaurant-menu.seed.ts --apply-images",
     "seed:menu": "ts-node -r tsconfig-paths/register src/database/seeds/restaurant-menu.seed.ts --replace-menu",
     "create:admin": "node scripts/create-admin.js"
   },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { Banknote, Check, Copy, CreditCard, Lock, Smartphone } from "lucide-react";
 import { VisaMark, MastercardMark, MeezaMark } from "./card-marks";
 
@@ -25,24 +25,18 @@ interface PaymentSectionProps {
 }
 
 function useCountdown(expiresAt: string | null, onExpire: () => void) {
-  const [remaining, setRemaining] = useState<number | null>(null);
-  // Kept in a ref so the interval below doesn't need onExpire in its deps —
-  // otherwise a new inline callback each render would restart the timer.
-  const onExpireRef = useRef(onExpire);
-  onExpireRef.current = onExpire;
+  const [now, setNow] = useState(() => Date.now());
+  const notifyExpired = useEffectEvent(onExpire);
 
   useEffect(() => {
-    if (!expiresAt) {
-      setRemaining(null);
-      return;
-    }
+    if (!expiresAt) return;
 
     const target = new Date(expiresAt).getTime();
     const tick = () => {
       const left = Math.max(0, Math.floor((target - Date.now()) / 1000));
-      setRemaining(left);
+      setNow(Date.now());
       if (left === 0) {
-        onExpireRef.current();
+        notifyExpired();
       }
     };
 
@@ -51,7 +45,8 @@ function useCountdown(expiresAt: string | null, onExpire: () => void) {
     return () => clearInterval(id);
   }, [expiresAt]);
 
-  return remaining;
+  if (!expiresAt) return null;
+  return Math.max(0, Math.floor((new Date(expiresAt).getTime() - now) / 1000));
 }
 
 function formatCountdown(seconds: number) {
@@ -110,12 +105,7 @@ export function PaymentSection({
   onExpire,
   disabled,
 }: PaymentSectionProps) {
-  const [frameLoaded, setFrameLoaded] = useState(false);
   const remaining = useCountdown(expiresAt, onExpire);
-
-  useEffect(() => {
-    setFrameLoaded(false);
-  }, [iframeUrl]);
 
   // Cash first, then InstaPay: between them they are how almost every order
   // is actually paid for. Card is offered last and only matters to the few
@@ -243,8 +233,31 @@ export function PaymentSection({
             )}
 
             {isSelected && option.value === "card" && iframeUrl && (
-              <div className="mt-3 overflow-hidden rounded-2xl border border-border bg-background">
-                <div className="flex items-center justify-between border-b border-border bg-muted/60 px-4 py-2.5">
+              <CardPaymentFrame
+                key={iframeUrl}
+                iframeUrl={iframeUrl}
+                remaining={remaining}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function CardPaymentFrame({
+  iframeUrl,
+  remaining,
+}: {
+  iframeUrl: string;
+  remaining: number | null;
+}) {
+  const [frameLoaded, setFrameLoaded] = useState(false);
+
+  return (
+    <div className="mt-3 overflow-hidden rounded-2xl border border-border bg-background">
+      <div className="flex items-center justify-between border-b border-border bg-muted/60 px-4 py-2.5">
                   <span className="flex items-center gap-1.5 text-xs font-bold">
                     <Lock className="size-3.5" strokeWidth={2} />
                     Secure card payment
@@ -258,9 +271,9 @@ export function PaymentSection({
                       Expires in {formatCountdown(remaining)}
                     </span>
                   )}
-                </div>
+      </div>
 
-                <div className="relative">
+      <div className="relative">
                   {!frameLoaded && (
                     <div className="absolute inset-0 z-10 flex flex-col justify-center gap-3 bg-background px-5">
                       <div className="h-3 w-24 animate-pulse rounded bg-muted" />
@@ -279,16 +292,11 @@ export function PaymentSection({
                     className="block h-[380px] w-full border-0"
                     sandbox="allow-forms allow-scripts allow-same-origin allow-top-navigation allow-popups"
                   />
-                </div>
+      </div>
 
-                <p className="border-t border-border bg-muted/60 px-4 py-2 text-[11px] text-muted-foreground">
-                  Processed securely by Paymob. We never see or store your card details.
-                </p>
-              </div>
-            )}
-          </div>
-        );
-      })}
+      <p className="border-t border-border bg-muted/60 px-4 py-2 text-[11px] text-muted-foreground">
+        Processed securely by Paymob. We never see or store your card details.
+      </p>
     </div>
   );
 }
