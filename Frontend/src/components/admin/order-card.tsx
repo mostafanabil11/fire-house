@@ -217,32 +217,32 @@ export function OrderCard({
           </ul>
         </section>
 
-        <aside className="flex gap-3 border-t border-border pt-3 lg:col-span-2 xl:col-span-1 xl:flex-col xl:border-t-0 xl:border-s xl:pt-0 xl:ps-4">
+        <aside className="flex items-end gap-3 border-t border-border pt-3 lg:col-span-2 xl:col-span-1 xl:flex-col xl:items-stretch xl:border-t-0 xl:border-s xl:pt-0 xl:ps-4">
           <div className="min-w-24 flex-1 xl:text-center">
             <p className="text-[0.62rem] font-black tracking-[0.12em] text-muted-foreground uppercase">Total</p>
             <p className="mt-0.5 font-heading text-lg font-black">{formatPrice(order.total)}</p>
             <p className="text-xs font-semibold text-muted-foreground">{paymentMethodLabel(order.paymentMethod)}</p>
             {payment && <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[0.58rem] font-black uppercase ${payment.className}`}>{payment.label}</span>}
           </div>
-          <footer className="flex flex-1 gap-2 xl:flex-col">
+          <footer className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center xl:w-full xl:flex-col xl:items-stretch">
           {confirmable ? (
             <button
               type="button"
               onClick={() => confirmOrder(order)}
               disabled={isPending}
-              className="inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full bg-primary px-4 text-sm font-black text-primary-foreground shadow-sm transition enabled:hover:-translate-y-0.5 enabled:hover:brightness-110 enabled:active:translate-y-0 disabled:opacity-50"
+              className="inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-black text-primary-foreground shadow-sm transition enabled:hover:-translate-y-0.5 enabled:hover:brightness-110 enabled:active:translate-y-0 disabled:opacity-50 xl:w-full"
             >
               <Check className="size-4" strokeWidth={3} aria-hidden />
               {isPending ? "Confirming…" : "Confirm order"}
             </button>
           ) : queuePosition !== undefined ? (
-            <p className="flex min-h-11 flex-1 items-center justify-center rounded-xl bg-amber-50 px-3 text-center text-xs font-black text-amber-900">
+            <p className="flex min-h-10 items-center justify-center rounded-xl bg-amber-50 px-3 text-center text-xs font-black text-amber-900 xl:w-full">
               Waiting for payment
             </p>
           ) : null}
           <Link
             href={href}
-            className="inline-flex min-h-10 flex-1 items-center justify-center gap-1 rounded-full border border-border px-3 text-xs font-black text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-foreground/10 bg-muted/60 px-3.5 text-xs font-black text-foreground transition-colors hover:border-foreground/15 hover:bg-muted xl:w-full"
           >
             View details
             <ChevronRight className="size-3.5 rtl:rotate-180" strokeWidth={2.5} aria-hidden />
