@@ -10,7 +10,9 @@ import { WhatsAppIcon } from "@/components/icons/social-icons";
 import { getAdminOrder, updateOrderStatus } from "@/lib/api/orders";
 import { formatPrice } from "@/lib/format";
 import { paymentSummaryLabel } from "@/lib/payment-label";
-import { whatsAppLink, telLink, mapsLink, orderChatMessage } from "@/lib/contact-links";
+import { whatsAppLink, telLink, mapsLink } from "@/lib/contact-links";
+import { orderConfirmationMessage } from "@/lib/order-confirmation-message";
+import { useLanguage } from "@/i18n/language-provider";
 import { addressText } from "@/lib/address-text";
 import { canConfirm, customerName, formatAge } from "@/lib/staff-orders";
 import { useConfirmOrder } from "@/hooks/use-confirm-order";
@@ -21,6 +23,7 @@ export default function AdminOrderDetailPage() {
   const params = useParams<{ orderNumber: string }>();
   const queryClient = useQueryClient();
   const { confirmOrder, isPending: confirming } = useConfirmOrder();
+  const { isArabic, t } = useLanguage();
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["admin", "orders", params.orderNumber],
@@ -50,7 +53,16 @@ export default function AdminOrderDetailPage() {
 
   const name = customerName(order);
   const phone = order.shippingAddress.phone;
-  const chat = whatsAppLink(phone, orderChatMessage(RESTAURANT.name, order.orderNumber));
+  // Built here rather than on click so the link is a plain anchor: the screen
+  // re-reads the order every 20 seconds, which keeps the arrival window fresh.
+  const chat = whatsAppLink(
+    phone,
+    orderConfirmationMessage(order, {
+      restaurantName: RESTAURANT.name,
+      locale: isArabic ? "ar-EG" : "en-US",
+      t,
+    }),
+  );
   const call = telLink(phone);
   const map = mapsLink([addressText(order.shippingAddress)]);
   const email = order.user?.email ?? order.guestEmail ?? null;

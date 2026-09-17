@@ -58,11 +58,3 @@ export function mapsLink(parts: (string | null | undefined)[]): string {
   const query = parts.filter(Boolean).join(", ");
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
-
-/**
- * The opening line staff send a customer — it names the restaurant and the
- * order so the customer knows this is not a stranger messaging them.
- */
-export function orderChatMessage(restaurantName: string, orderNumber: string): string {
-  return `Hello! This is ${restaurantName} about your order ${orderNumber}.`;
-}

@@ -717,6 +717,21 @@ const arabic: Record<string, string> = {
   Summary: "الملخص",
   "Delivering to": "التوصيل إلى",
   "Order something else": "اطلب شيئًا آخر",
+
+  // The WhatsApp confirmation staff send a customer. Whole sentences, because
+  // the pieces do not fall in English's order in Arabic; {name}-style
+  // placeholders are filled in after translation by
+  // lib/order-confirmation-message.ts.
+  "Hello {name}! This is {restaurant} confirming your order {order}.":
+    "أهلًا {name}! معك {restaurant} لتأكيد طلبك {order}.",
+  there: "بك",
+  "Expected arrival": "وقت الوصول المتوقع",
+  Note: "ملاحظة",
+  "Paid in full: {amount} ({method}) — nothing to pay on delivery.":
+    "تم الدفع بالكامل: {amount} ({method}) — لا يوجد مبلغ مستحق عند التسليم.",
+  "To pay on delivery: {amount} ({method})": "المبلغ المستحق عند التسليم: {amount} ({method})",
+  "Amount: {amount} ({method})": "المبلغ: {amount} ({method})",
+  "Thank you for ordering with us!": "شكرًا لطلبك من عندنا!",
   "Something wrong? Contact us": "هل هناك مشكلة؟ تواصل معنا",
 
   // Progress steps

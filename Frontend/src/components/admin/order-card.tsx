@@ -13,7 +13,9 @@ import {
 import { WhatsAppIcon } from "@/components/icons/social-icons";
 import { formatPrice } from "@/lib/format";
 import { paymentMethodLabel } from "@/lib/payment-label";
-import { whatsAppLink, telLink, orderChatMessage } from "@/lib/contact-links";
+import { whatsAppLink, telLink } from "@/lib/contact-links";
+import { orderConfirmationMessage } from "@/lib/order-confirmation-message";
+import { useLanguage } from "@/i18n/language-provider";
 import { addressText } from "@/lib/address-text";
 import { canConfirm, customerName, formatAge, isOverdue } from "@/lib/staff-orders";
 import { useConfirmOrder } from "@/hooks/use-confirm-order";
@@ -75,9 +77,19 @@ export function OrderCard({
   order: AdminOrderListItem;
   queuePosition?: number;
 }) {
+  const { isArabic, t } = useLanguage();
   const name = customerName(order);
   const phone = order.shippingAddress?.phone ?? null;
-  const chat = whatsAppLink(phone, orderChatMessage(RESTAURANT.name, order.orderNumber));
+  // A list row carries no money breakdown (the admin list query doesn't select
+  // one), so this message states the total without the lines above it.
+  const chat = whatsAppLink(
+    phone,
+    orderConfirmationMessage(order, {
+      restaurantName: RESTAURANT.name,
+      locale: isArabic ? "ar-EG" : "en-US",
+      t,
+    }),
+  );
   const call = telLink(phone);
   const address = order.shippingAddress ? addressText(order.shippingAddress) : "";
   const confirmable = canConfirm(order);
