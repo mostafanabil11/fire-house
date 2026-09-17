@@ -48,15 +48,17 @@ export class AuthController {
     };
   }
 
-  private setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
-    const base = this.cookieOptions;
-
+  private setAccessCookie(res: Response, accessToken: string) {
     res.cookie('accessToken', accessToken, {
-      ...base,
+      ...this.cookieOptions,
       maxAge: parseDurationToMs(this.configService.jwtExpiration),
     });
+  }
+
+  private setAuthCookies(res: Response, accessToken: string, refreshToken: string) {
+    this.setAccessCookie(res, accessToken);
     res.cookie('refreshToken', refreshToken, {
-      ...base,
+      ...this.cookieOptions,
       maxAge: parseDurationToMs(this.configService.jwtRefreshExpiration),
     });
   }
@@ -138,7 +140,16 @@ export class AuthController {
       throw new UnauthorizedException('No refresh token provided');
     }
     const result = await this.authService.refresh(refreshToken, this.getDeviceInfo(req));
-    this.setAuthCookies(res, result.data.accessToken, result.data.refreshToken);
+
+    // A refresh answered from the rotation grace window returns no refresh
+    // token: the session already rotated to a new one, and whichever request
+    // won that race is delivering it. Writing the cookie here would be writing
+    // the consumed token back over the live one.
+    if (result.data.refreshToken) {
+      this.setAuthCookies(res, result.data.accessToken, result.data.refreshToken);
+    } else {
+      this.setAccessCookie(res, result.data.accessToken);
+    }
     return {
       success: result.success,
       message: result.message,

@@ -23,6 +23,12 @@ import { parseDurationToMs } from '@/common/utils/duration.util';
 
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
+// How long a refresh token stays usable after the rotation that replaced it.
+// Long enough to cover the requests one page load fires together — including a
+// cold start on a sleeping free instance, where the first reply takes a moment —
+// and short enough that a stolen token is worth almost nothing on its own.
+const REFRESH_ROTATION_GRACE_MS = 30 * 1000;
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -141,17 +147,37 @@ export class AuthService {
     });
   }
 
-  private async generateTokens(user: UserDocument, deviceInfo: DeviceInfo) {
-    const payload: JwtPayload = {
+  // The same, for the token a session held immediately before its last
+  // rotation — valid only inside the grace window refresh() writes.
+  private findGraceSessionIndex(user: UserDocument, refreshToken: string): number {
+    const candidateHash = Buffer.from(this.hashRefreshToken(refreshToken));
+    const now = new Date();
+    return user.sessions.findIndex((session) => {
+      if (!session.previousTokenHash || !session.previousTokenExpiresAt) return false;
+      if (session.previousTokenExpiresAt <= now) return false;
+      const storedHash = Buffer.from(session.previousTokenHash);
+      return storedHash.length === candidateHash.length && crypto.timingSafeEqual(storedHash, candidateHash);
+    });
+  }
+
+  private buildPayload(user: UserDocument): JwtPayload {
+    return {
       sub: user._id.toString(),
       email: user.email,
       role: user.role,
     };
+  }
 
-    const accessToken = this.jwtService.sign(
-      { ...payload, type: 'access' },
-      { expiresIn: this.configService.jwtExpiration }
+  private generateAccessToken(user: UserDocument): string {
+    return this.jwtService.sign(
+      { ...this.buildPayload(user), type: 'access' },
+      { expiresIn: this.configService.jwtExpiration },
     );
+  }
+
+  private async generateTokens(user: UserDocument, deviceInfo: DeviceInfo, rotatedFromHash?: string) {
+    const payload = this.buildPayload(user);
+    const accessToken = this.generateAccessToken(user);
 
     // Signed (not opaque random) so refresh() can identify the user straight from
     // the cookie without a separate userId param — still hashed at rest below,
@@ -173,6 +199,8 @@ export class AuthService {
       ip: deviceInfo.ip,
       createdAt: now,
       expiresAt: new Date(now.getTime() + parseDurationToMs(this.configService.jwtRefreshExpiration)),
+      previousTokenHash: rotatedFromHash ?? null,
+      previousTokenExpiresAt: rotatedFromHash ? new Date(now.getTime() + REFRESH_ROTATION_GRACE_MS) : null,
     });
     await user.save();
 
@@ -254,19 +282,40 @@ export class AuthService {
 
     const sessionIndex = this.findSessionIndex(user, refreshToken);
     if (sessionIndex === -1) {
-      throw new UnauthorizedException('Access denied');
+      // Not the session's current token. It may still be the one rotated out
+      // moments ago: a page load fires several requests at once, they all find
+      // the access token expired, and each asks for a refresh carrying the same
+      // cookie. Only the first can win a strict rotation, and treating the rest
+      // as reuse signed people out for doing nothing but opening the site.
+      //
+      // Inside the grace window such a caller gets an access token and nothing
+      // else: the session keeps the refresh token it just rotated to, so the
+      // chain still advances exactly once and a replay seconds later buys an
+      // attacker one short-lived access token rather than a session of their
+      // own. Past the window it is reuse again, and still refused.
+      const graceIndex = this.findGraceSessionIndex(user, refreshToken);
+      if (graceIndex === -1) {
+        throw new UnauthorizedException('Access denied');
+      }
+
+      return {
+        success: true,
+        message: 'Tokens refreshed',
+        data: { accessToken: this.generateAccessToken(user), refreshToken: null },
+      };
     }
 
     // Rotation: this device's old refresh token is consumed here and
     // generateTokens() below issues it a fresh one — every other device's
     // session is untouched.
+    const rotatedFromHash = this.hashRefreshToken(refreshToken);
     user.sessions.splice(sessionIndex, 1);
 
-    const tokens = await this.generateTokens(user, deviceInfo);
+    const tokens = await this.generateTokens(user, deviceInfo, rotatedFromHash);
     return {
       success: true,
       message: 'Tokens refreshed',
-      data: tokens,
+      data: { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken as string | null },
     }
   }
 

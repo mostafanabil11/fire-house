@@ -24,6 +24,17 @@ export class Session {
 
   @Prop({ required: true })
   expiresAt: Date = new Date();
+
+  // The hash this session's refresh token had just before its last rotation,
+  // still honoured until previousTokenExpiresAt. Two requests that start
+  // together both carry the same cookie, and without this the one that arrives
+  // second presents a token the first has already consumed and is signed out —
+  // see refresh() in auth.service.ts for why that window has to exist.
+  @Prop({ type: String, default: null })
+  previousTokenHash: string | null = null;
+
+  @Prop({ type: Date, default: null })
+  previousTokenExpiresAt: Date | null = null;
 }
 
 export const SessionSchema = SchemaFactory.createForClass(Session);
