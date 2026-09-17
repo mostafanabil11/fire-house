@@ -27,7 +27,16 @@ export const checkoutSchema = z
     // request. The items are only ever used as a *statement of intent* — the
     // server re-prices every line against live product data before charging
     // anything, exactly as it does for a signed-in user's server cart.
-    email: z.string().trim().email('Please provide a valid email address').max(200).optional(),
+    // Optional. With one the customer gets a confirmation message and can use
+    // the track-your-order lookup later; without one the order is placed just
+    // the same, and the guest token in their tab is the only thing that proves
+    // the order is theirs. A blank field is someone declining to give an
+    // address, not a malformed one, so it is read as absent rather than
+    // rejected as invalid.
+    email: z.preprocess(
+      (value) => (typeof value === 'string' && value.trim() === '' ? null : value),
+      z.string().trim().email('Please provide a valid email address').max(200).nullish(),
+    ),
     shippingAddress: guestShippingAddressSchema.optional(),
     items: z.array(cartItemSchema).max(100).optional(),
 
@@ -73,11 +82,16 @@ export const checkoutSchema = z
         message: 'A shipping address is required',
       });
     }
-    if (!data.email) {
+    // A coupon's per-customer limit is keyed to an account or an email
+    // address, so a guest redeeming one has to give an address — with no
+    // identity to record the redemption against, the cap cannot be enforced
+    // and the same code would work forever. Ordering without a coupon, and so
+    // without an email, stays open.
+    if (data.couponCode && !data.email) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['email'],
-        message: 'An email address is required so we can send your order confirmation',
+        message: 'An email address is required to use a coupon',
       });
     }
     if (!data.items || data.items.length === 0) {

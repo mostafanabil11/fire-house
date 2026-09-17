@@ -187,7 +187,10 @@ export class OrdersService {
     if (dto.idempotencyKey) {
       const existing = await this.orderModel.findOne({
         idempotencyKey: dto.idempotencyKey,
-        ...(userId ? { user: userId } : { guestEmail: dto.email?.trim().toLowerCase() }),
+        // Scoped explicitly to null for an emailless guest: leaving the field
+        // undefined would drop it from the query and let one guest's retry
+        // match another's order.
+        ...(userId ? { user: userId } : { guestEmail: dto.email?.trim().toLowerCase() ?? null }),
       });
       if (existing) {
         return { success: true, message: 'Order already placed', data: existing };
@@ -257,8 +260,10 @@ export class OrdersService {
         : settings.flatShippingRateMinorUnits;
 
     // Who this order belongs to, in the one shape the coupon layer needs.
-    // Guests are capped per email address rather than per account.
-    const guestEmail = userId ? null : dto.email!.trim().toLowerCase();
+    // Guests are capped per email address rather than per account — and a
+    // guest who gave no address has no cap to be measured against, which is
+    // why checkout only insists on an email when a coupon is being used.
+    const guestEmail = userId ? null : (dto.email?.trim().toLowerCase() ?? null);
     const redeemer = { userId, email: guestEmail };
 
     // Re-validated here rather than trusted from an earlier /coupons/validate

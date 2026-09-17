@@ -84,3 +84,46 @@ describe('checkoutSchema payment methods', () => {
     });
   });
 });
+
+// Email stopped being a condition of ordering: plenty of walk-up customers
+// don't have one to hand and shouldn't be turned away at the last step. What
+// it still buys is a confirmation message and the track-your-order lookup,
+// and it is still the only identity a guest coupon can be capped against.
+describe('checkoutSchema email', () => {
+  it('accepts a guest order with no email at all', () => {
+    const { email: _email, ...withoutEmail } = guestOrder;
+    expect(checkoutSchema.safeParse(withoutEmail).success).toBe(true);
+  });
+
+  it('reads a blank field as no email rather than a bad one', () => {
+    const result = parse({ email: '   ' });
+    expect(result.success).toBe(true);
+    expect(result.success && result.data.email).toBeNull();
+  });
+
+  it('still rejects an email that is not one', () => {
+    const result = parse({ email: 'not-an-address' });
+    expect(result.success).toBe(false);
+    expect(messagesFor(result, 'email')).toEqual(['Please provide a valid email address']);
+  });
+
+  it('keeps a valid email', () => {
+    const result = parse({ email: '  Customer@Example.com  ' });
+    expect(result.success).toBe(true);
+    expect(result.success && result.data.email).toBe('Customer@Example.com');
+  });
+
+  // The per-customer cap is recorded against an account or an email. With
+  // neither there is nothing to record, so the code would never be used up.
+  it('requires an email from a guest using a coupon', () => {
+    const { email: _email, ...withoutEmail } = guestOrder;
+    const result = checkoutSchema.safeParse({ ...withoutEmail, couponCode: 'WELCOME10' });
+    expect(result.success).toBe(false);
+    expect(messagesFor(result, 'email')).toEqual(['An email address is required to use a coupon']);
+  });
+
+  it('lets a signed-in customer use a coupon without one', () => {
+    const result = checkoutSchema.safeParse({ addressId: 'addr-1', couponCode: 'WELCOME10' });
+    expect(result.success).toBe(true);
+  });
+});

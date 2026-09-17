@@ -36,6 +36,10 @@ export function DeliveryDetailsSection({
   const pathname = usePathname();
   const [emailTouched, setEmailTouched] = useState(false);
 
+  // Leaving the field empty is a choice, not a mistake — only something typed
+  // and malformed is worth complaining about.
+  const emailInvalid = emailTouched && email.trim() !== "" && !validEmail(email);
+
   return (
     <div className="space-y-4">
       <AddressFormFields
@@ -55,7 +59,7 @@ export function DeliveryDetailsSection({
           <>
             <div className="mb-1.5 flex items-baseline justify-between gap-3">
               <label className="text-sm font-bold" htmlFor="checkout-email">
-                Email
+                Email <span className="font-normal text-muted-foreground">(optional)</span>
               </label>
               {/* Round-trips back to checkout so signing in mid-flow doesn't
                   cost the customer the order they were about to place. */}
@@ -70,9 +74,8 @@ export function DeliveryDetailsSection({
               id="checkout-email"
               type="email"
               inputMode="email"
-              required
               maxLength={200}
-              aria-invalid={emailTouched && !validEmail(email)}
+              aria-invalid={emailInvalid}
               aria-describedby="checkout-email-help"
               onBlur={() => setEmailTouched(true)}
               disabled={disabled}
@@ -82,8 +85,8 @@ export function DeliveryDetailsSection({
               onChange={(e) => onEmailChange(e.target.value)}
               className={inputClass}
             />
-            <p id="checkout-email-help" className={`mt-1.5 text-xs ${emailTouched && !validEmail(email) ? "text-destructive" : "text-muted-foreground"}`}>
-              <T>{emailTouched && !validEmail(email) ? "Enter a valid email address." : "Your order confirmation and tracking link are sent here."}</T>
+            <p id="checkout-email-help" className={`mt-1.5 text-xs ${emailInvalid ? "text-destructive" : "text-muted-foreground"}`}>
+              <T>{emailInvalid ? "Enter a valid email address." : "Add one and we'll send your order confirmation and tracking link. Without it, keep this tab open to follow your order."}</T>
             </p>
           </>
         )}

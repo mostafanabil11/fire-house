@@ -148,7 +148,7 @@ export default function CheckoutPage() {
         ...(user
           ? { addressId: effectiveAddressId }
           : {
-              email: guestEmail.trim(),
+              email: guestEmail.trim() || null,
               shippingAddress: guestAddress,
               // The guest's order lives only in this browser, so it travels
               // with the request. The server re-prices every line before
@@ -206,8 +206,13 @@ export default function CheckoutPage() {
   // A member needs a saved address selected; a guest needs the fields they
   // typed to be complete. Both are re-validated server-side — this only
   // decides whether the button is worth enabling.
+  //
+  // Email is no longer one of them. It is still checked when given, and still
+  // demanded when a coupon is applied — the server caps a guest's redemptions
+  // by email, so without one the code has nothing to be counted against.
+  const guestEmailUsable = guestEmail.trim() === "" ? !coupon : validEmail(guestEmail);
   const guestDetailsComplete =
-    validEmail(guestEmail) &&
+    guestEmailUsable &&
     guestAddress.firstName.trim() !== "" &&
     guestAddress.lastName.trim() !== "" &&
     validPhone(guestAddress.phone) &&
@@ -233,7 +238,7 @@ export default function CheckoutPage() {
 
   if (cartError) return <div className="page-shell"><PageState title="We couldn't load your order" description="Your selections are saved. Please try again." onRetry={retryCart} /></div>;
   if (cartLoading && !cart.items.length) return <PageSkeleton />;
-  const guidance = !deliveryReady ? (user ? "Choose a delivery address to continue." : "Complete your name, mobile number, address and email to continue.") : !paymentReady ? "Enter your payment reference to continue." : settingsQuery.isError ? "Delivery pricing could not be loaded. Please retry." : total === null ? "Loading delivery pricing…" : !cartIsClean ? "Please review the changes to your order." : "Review your details before placing your order.";
+  const guidance = !deliveryReady ? (user ? "Choose a delivery address to continue." : (!user && coupon && guestEmail.trim() === "" ? "Add your email to use this coupon, or remove it to continue." : "Complete your name, mobile number and address to continue.")) : !paymentReady ? "Enter your payment reference to continue." : settingsQuery.isError ? "Delivery pricing could not be loaded. Please retry." : total === null ? "Loading delivery pricing…" : !cartIsClean ? "Please review the changes to your order." : "Review your details before placing your order.";
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pt-6 pb-40 sm:px-6 lg:pb-16">
