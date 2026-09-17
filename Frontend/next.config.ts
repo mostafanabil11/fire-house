@@ -2,7 +2,32 @@ import type { NextConfig } from "next";
 
 // Where the API really lives. Server Components talk to it directly (no browser
 // involved, so no cookie or CORS question), and the rewrite below points at it.
-const API_ORIGIN = process.env.API_ORIGIN ?? process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3100";
+//
+// The localhost default is a development convenience and nothing more. Deployed
+// without API_ORIGIN set it became a trap: the rewrite pointed at a loopback
+// address, the host refused to proxy there (Vercel answers
+// DNS_HOSTNAME_RESOLVED_PRIVATE), and every /api/backend call came back 404.
+// The site still built and still rendered, so it looked alive while no data
+// loaded and no session could be established — the visitor just saw an empty
+// menu and a sign-in page. Failing the build says which variable is missing
+// instead of shipping that.
+function resolveApiOrigin(): string {
+  // Empty string counts as unset: a platform that declares a variable it was
+  // never given passes "" rather than nothing, and "" is not an origin.
+  const configured = process.env.API_ORIGIN || process.env.NEXT_PUBLIC_API_URL;
+  if (configured) return configured;
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "API_ORIGIN (or NEXT_PUBLIC_API_URL) must be set to the deployed API origin — " +
+        "without it every /api/backend request resolves to localhost and fails.",
+    );
+  }
+
+  return "http://localhost:3100";
+}
+
+const API_ORIGIN = resolveApiOrigin();
 
 const nextConfig: NextConfig = {
   // Next 16 serves /_next/* dev resources only to the origin the dev server
