@@ -11,7 +11,12 @@ import imageManifest from "./src/lib/image-manifest.json";
 //
 // Anything already in the environment wins, so a .env.local can point a local
 // production build at a local API without editing the committed file.
-if (process.env.NODE_ENV === "production") {
+//
+// The same code is also deployed to Vercel (VERCEL is set on its builds). That
+// project carries its own settings, so the Cloudflare file is not read there.
+const onVercel = Boolean(process.env.VERCEL);
+
+if (process.env.NODE_ENV === "production" && !onVercel) {
   const { vars } = unstable_readConfig({ config: "wrangler.jsonc" }, { hideWarnings: true });
   for (const [key, value] of Object.entries(vars)) {
     // Empty counts as unset: "" is what an unfilled variable looks like.
@@ -74,8 +79,12 @@ const nextConfig: NextConfig = {
   // — see the comment there for why the API must sit on this site's own origin.
   // `next dev` has no Worker in front of it, so in development alone a rewrite
   // stands in for it.
+  //
+  // Vercel has no Worker either, so there the rewrite is the proxy in
+  // production too. It cannot vouch for each visitor's address the way
+  // worker.ts does, so on Vercel every visitor shares one rate-limit allowance.
   async rewrites() {
-    if (process.env.NODE_ENV === "production") return [];
+    if (process.env.NODE_ENV === "production" && !onVercel) return [];
     const apiOrigin = process.env.API_ORIGIN || process.env.NEXT_PUBLIC_API_URL || "http://localhost:3100";
     return [{ source: "/api/backend/:path*", destination: `${apiOrigin}/:path*` }];
   },
