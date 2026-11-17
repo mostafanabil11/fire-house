@@ -7,12 +7,15 @@ import Link from "next/link";
 import { getNotifications, retryNotification } from "@/lib/api/notifications";
 import type { NotificationStatus } from "@/lib/api/notifications";
 import { formatAge } from "@/lib/staff-orders";
+import { AdminPageHeader } from "@/components/admin/ui/page-header";
+import { StatusPill, type StatusTone } from "@/components/admin/ui/status-pill";
+import { EmptyState } from "@/components/admin/ui/empty-state";
 
-const STATUS_STYLES: Record<NotificationStatus, { label: string; className: string }> = {
-  sent: { label: "Sent", className: "bg-[var(--success)]/15 text-foreground" },
-  pending: { label: "Sending", className: "bg-accent text-accent-foreground" },
-  failed: { label: "Failed", className: "bg-destructive/15 text-destructive" },
-  skipped: { label: "Not sent", className: "bg-muted text-muted-foreground" },
+const STATUS_STYLES: Record<NotificationStatus, { label: string; tone: StatusTone }> = {
+  sent: { label: "Sent", tone: "success" },
+  pending: { label: "Sending", tone: "warning" },
+  failed: { label: "Failed", tone: "danger" },
+  skipped: { label: "Not sent", tone: "neutral" },
 };
 
 export default function AdminNotificationsPage() {
@@ -34,18 +37,18 @@ export default function AdminNotificationsPage() {
   });
 
   return (
-    <div>
-      <h1 className="font-heading text-2xl font-black tracking-tight">Order alerts</h1>
-      <p className="mt-1 text-sm text-muted-foreground">
-        Every WhatsApp message the team should have received when an order came in.
-      </p>
+    <div className="grid gap-5">
+      <AdminPageHeader
+        title="Order alerts"
+        description="Every WhatsApp message the team should have received when an order came in."
+      />
 
       {data && !data.whatsappConfigured && (
-        <div className="mt-5 flex gap-3 rounded-2xl border border-accent bg-accent/40 p-4">
+        <div className="flex gap-3 rounded-2xl bg-warning-soft p-4 text-warning-strong">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" strokeWidth={2.5} aria-hidden />
           <div className="text-sm">
             <p className="font-black">WhatsApp is not connected yet</p>
-            <p className="mt-1 text-muted-foreground">
+            <p className="mt-1">
               Alerts are still being written down — you can read below exactly what your team would
               have received. Add the WhatsApp credentials to start actually sending them; nothing
               else has to change.
@@ -55,7 +58,7 @@ export default function AdminNotificationsPage() {
       )}
 
       {data && data.whatsappConfigured && (
-        <div className="mt-5 rounded-2xl border border-border bg-card p-4 text-sm">
+        <div className="rounded-2xl border border-border bg-card p-4 text-sm">
           <p>
             <span className="font-bold">Sending to:</span>{" "}
             {data.recipients.length > 0 ? data.recipients.map((r) => `+${r}`).join(", ") : "nobody"}
@@ -68,18 +71,16 @@ export default function AdminNotificationsPage() {
         </div>
       )}
 
-      <div className="mt-5 grid gap-3">
+      <div className="grid gap-3">
         {isLoading ? (
           Array.from({ length: 3 }).map((_, index) => (
             <div key={index} className="h-32 animate-pulse rounded-2xl bg-muted" />
           ))
         ) : !data || data.entries.length === 0 ? (
-          <div className="rounded-2xl border border-border bg-card p-10 text-center">
-            <p className="font-bold">No alerts yet</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              One appears here the moment an order is placed.
-            </p>
-          </div>
+          <EmptyState
+            title="No alerts yet"
+            description="One appears here the moment an order is placed."
+          />
         ) : (
           data.entries.map((entry) => {
             const style = STATUS_STYLES[entry.status];
@@ -89,25 +90,23 @@ export default function AdminNotificationsPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <Link
                       href={`/admin/orders/${entry.orderNumber}`}
-                      className="font-heading text-base font-black hover:underline"
+                      className="font-heading text-base hover:underline" data-i18n-ignore
                     >
                       {entry.orderNumber}
                     </Link>
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.7rem] font-black uppercase ${style.className}`}
+                    <StatusPill
+                      tone={style.tone}
+                      icon={
+                        entry.status === "sent" ? (
+                          <Check strokeWidth={3} aria-hidden />
+                        ) : entry.status === "pending" ? (
+                          <Clock strokeWidth={3} aria-hidden />
+                        ) : undefined
+                      }
                     >
-                      {entry.status === "sent" ? (
-                        <Check className="size-3" strokeWidth={3} aria-hidden />
-                      ) : entry.status === "pending" ? (
-                        <Clock className="size-3" strokeWidth={3} aria-hidden />
-                      ) : null}
                       {style.label}
-                    </span>
-                    {entry.event === "order.cancelled" && (
-                      <span className="rounded-full bg-muted px-2.5 py-0.5 text-[0.7rem] font-black uppercase">
-                        Cancellation
-                      </span>
-                    )}
+                    </StatusPill>
+                    {entry.event === "order.cancelled" && <StatusPill>Cancellation</StatusPill>}
                     {entry.deliveryStatus && (
                       <span className="text-xs text-muted-foreground">
                         {entry.deliveryStatus} on WhatsApp
@@ -120,12 +119,12 @@ export default function AdminNotificationsPage() {
                   </span>
                 </div>
 
-                <pre className="mt-3 overflow-x-auto rounded-xl bg-muted p-3 font-sans text-xs leading-5 whitespace-pre-wrap">
+                <pre data-i18n-ignore className="mt-3 overflow-x-auto rounded-xl bg-muted p-3 font-sans text-sm leading-6 whitespace-pre-wrap">
                   {entry.body}
                 </pre>
 
                 {entry.lastError && (
-                  <p className="mt-2 text-xs text-destructive">
+                  <p className="mt-2 text-sm text-danger-strong">
                     {entry.lastError}
                     {entry.attempts > 0 ? ` (tried ${entry.attempts}×)` : ""}
                   </p>
@@ -136,7 +135,7 @@ export default function AdminNotificationsPage() {
                     type="button"
                     onClick={() => retryMutation.mutate(entry._id)}
                     disabled={retryMutation.isPending}
-                    className="mt-3 inline-flex min-h-10 items-center gap-1.5 rounded-full border border-border px-4 text-xs font-bold disabled:opacity-50"
+                    className="action-secondary mt-3 min-h-11 rounded-xl px-4"
                   >
                     {entry.status === "skipped" ? (
                       <Send className="size-3.5" strokeWidth={2.5} aria-hidden />

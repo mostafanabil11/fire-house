@@ -3,26 +3,38 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Trash2 } from "lucide-react";
+import { Check, Star, Trash2, X } from "lucide-react";
 import { getReviewsForModeration, moderateReview, deleteReview } from "@/lib/api/reviews";
 import { StarRating } from "@/components/products/star-rating";
-import type { ReviewStatus } from "@/types/review";
+import type { Review, ReviewStatus } from "@/types/review";
 import { errorMessage } from "@/lib/api/error-message";
+import { AdminPageHeader } from "@/components/admin/ui/page-header";
+import { Segmented } from "@/components/admin/ui/segmented";
+import { StatusPill } from "@/components/admin/ui/status-pill";
+import { EmptyState } from "@/components/admin/ui/empty-state";
+import { ConfirmDialog } from "@/components/admin/ui/confirm-dialog";
+import { T } from "@/i18n/language-provider";
 
-const TABS: { label: string; value: ReviewStatus | "" }[] = [
+type Tab = ReviewStatus | "all";
+
+const TABS: { label: string; value: Tab }[] = [
   { label: "Pending", value: "pending" },
   { label: "Approved", value: "approved" },
   { label: "Rejected", value: "rejected" },
-  { label: "All", value: "" },
+  { label: "All", value: "all" },
 ];
+
+const STATUS_TONE = { pending: "warning", approved: "success", rejected: "neutral" } as const;
+const STATUS_LABEL = { pending: "Pending", approved: "Approved", rejected: "Rejected" } as const;
 
 export default function AdminReviewsPage() {
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<ReviewStatus | "">("pending");
+  const [tab, setTab] = useState<Tab>("pending");
+  const [deleting, setDeleting] = useState<Review | null>(null);
 
   const { data: reviews, isLoading } = useQuery({
     queryKey: ["admin", "reviews", tab],
-    queryFn: () => getReviewsForModeration(tab || undefined),
+    queryFn: () => getReviewsForModeration(tab === "all" ? undefined : tab),
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin", "reviews"] });
@@ -35,58 +47,60 @@ export default function AdminReviewsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteReview(id),
-    onSuccess: invalidate,
+    onSuccess: () => {
+      setDeleting(null);
+      invalidate();
+    },
     onError: (err: unknown) => toast.error(errorMessage(err, "Could not delete review")),
   });
 
   return (
-    <div>
-      <h1 className="mb-8 font-heading text-headline-sm font-bold text-foreground">Reviews</h1>
+    <div className="grid gap-5">
+      <AdminPageHeader title="Reviews" description="Approve a review before customers can see it." />
 
-      <div className="mb-6 flex gap-1 border-b border-border">
-        {TABS.map((t) => (
-          <button
-            key={t.value}
-            type="button"
-            onClick={() => setTab(t.value)}
-            className={`px-4 py-2.5 text-[12px] font-medium tracking-[0.05em] uppercase transition-colors ${
-              tab === t.value ? "border-b-2 border-foreground text-foreground" : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <Segmented label="Review status" value={tab} onChange={setTab} options={TABS} />
 
       {isLoading || !reviews ? (
-        <div className="h-64 animate-pulse bg-muted" />
+        <div className="h-64 animate-pulse rounded-2xl bg-muted" />
       ) : reviews.length === 0 ? (
-        <p className="text-[13px] text-muted-foreground">No reviews here.</p>
+        <EmptyState icon={<Star aria-hidden />} title="No reviews here." />
       ) : (
-        <div className="divide-y divide-border border-t border-b border-border">
+        <ul className="grid gap-3">
           {reviews.map((review) => {
             const product = typeof review.product === "object" ? review.product : null;
             return (
-              <div key={review._id} className="py-4">
-                <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[13px] font-medium text-foreground">{product?.name ?? "Unknown product"}</p>
-                    <p className="text-[12px] text-muted-foreground">
-                      {review.user ? `${review.user.firstName} ${review.user.lastName}` : "Unknown"} ·{" "}
-                      {new Date(review.createdAt).toLocaleDateString()}
+              <li key={review._id} className="rounded-2xl border border-border bg-card p-4 sm:p-5">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-base font-bold">
+                      {product ? <T>{product.name}</T> : "Unknown dish"}
+                    </p>
+                    <p className="mt-0.5 text-sm text-muted-foreground">
+                      <span data-i18n-ignore>
+                        {review.user ? `${review.user.firstName} ${review.user.lastName}` : "—"}
+                      </span>
+                      <span aria-hidden> · </span>
+                      {new Date(review.createdAt).toLocaleDateString("en-GB")}
                     </p>
                   </div>
-                  <StarRating value={review.rating} />
+                  <div className="flex items-center gap-2">
+                    <StarRating value={review.rating} />
+                    <StatusPill tone={STATUS_TONE[review.status]}>{STATUS_LABEL[review.status]}</StatusPill>
+                  </div>
                 </div>
-                <p className="mb-1 text-[14px] font-medium text-foreground">{review.title}</p>
-                <p className="mb-3 text-[13px] text-muted-foreground">{review.body}</p>
-                <div className="flex items-center gap-3">
+                <div data-i18n-ignore className="mt-3">
+                  {review.title && <p className="font-bold">{review.title}</p>}
+                  <p className="mt-1 text-sm leading-6 text-muted-foreground">{review.body}</p>
+                </div>
+                <div className="mt-4 flex flex-wrap items-center gap-2">
                   {review.status !== "approved" && (
                     <button
                       type="button"
                       onClick={() => moderateMutation.mutate({ id: review._id, status: "approved" })}
-                      className="border border-foreground px-4 py-1.5 text-[11px] font-medium tracking-[0.05em] text-foreground uppercase hover:bg-foreground hover:text-background"
+                      disabled={moderateMutation.isPending}
+                      className="action-primary min-h-11 rounded-xl px-4"
                     >
+                      <Check className="size-4" aria-hidden />
                       Approve
                     </button>
                   )}
@@ -94,27 +108,39 @@ export default function AdminReviewsPage() {
                     <button
                       type="button"
                       onClick={() => moderateMutation.mutate({ id: review._id, status: "rejected" })}
-                      className="border border-border px-4 py-1.5 text-[11px] font-medium tracking-[0.05em] text-muted-foreground uppercase hover:bg-muted"
+                      disabled={moderateMutation.isPending}
+                      className="action-secondary min-h-11 rounded-xl px-4"
                     >
+                      <X className="size-4" aria-hidden />
                       Reject
                     </button>
                   )}
                   <button
                     type="button"
-                    onClick={() => {
-                      if (confirm("Delete this review permanently?")) deleteMutation.mutate(review._id);
-                    }}
-                    className="p-1.5 text-muted-foreground hover:text-destructive"
+                    onClick={() => setDeleting(review)}
+                    className="ms-auto grid size-11 place-items-center rounded-xl text-muted-foreground hover:bg-danger-soft hover:text-danger-strong"
                     aria-label="Delete review"
                   >
-                    <Trash2 className="size-4" strokeWidth={1.5} />
+                    <Trash2 className="size-4" aria-hidden />
                   </button>
                 </div>
-              </div>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
+
+      <ConfirmDialog
+        open={deleting !== null}
+        onOpenChange={(open) => !open && setDeleting(null)}
+        title="Delete this review?"
+        confirmLabel="Delete review"
+        tone="danger"
+        pending={deleteMutation.isPending}
+        onConfirm={() => deleting && deleteMutation.mutate(deleting._id)}
+      >
+        It is removed for good, including from the dish page. This cannot be undone.
+      </ConfirmDialog>
     </div>
   );
 }

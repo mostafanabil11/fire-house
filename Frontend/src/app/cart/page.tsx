@@ -62,13 +62,13 @@ export default function CartPage() {
             {items.map((item) => (
               <li
                 key={item.key}
-                className={`flex gap-4 rounded-[1.5rem] border border-border bg-card p-3 ${
+                className={`flex gap-4 rounded-2xl border border-border bg-card p-3 ${
                   !item.available ? "opacity-60" : ""
                 }`}
               >
                 <Link
                   href={item.slug ? `/menu/${item.slug}` : "/menu"}
-                  className="relative size-24 shrink-0 overflow-hidden rounded-[1.1rem] bg-muted sm:size-28"
+                  className="relative size-24 shrink-0 overflow-hidden rounded-xl bg-muted sm:size-28"
                 >
                   {item.image ? (
                     <Image
@@ -139,7 +139,7 @@ export default function CartPage() {
           </ul>
         </div>
 
-        <div className="h-fit rounded-[1.5rem] border border-border bg-card p-6 lg:sticky lg:top-28">
+        <div className="h-fit rounded-2xl border border-border bg-card p-6 lg:sticky lg:top-28">
           <h2 className="font-heading text-lg font-black">Order summary</h2>
 
           <div className="mt-5 flex items-center justify-between text-sm">

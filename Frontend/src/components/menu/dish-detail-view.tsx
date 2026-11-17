@@ -162,7 +162,7 @@ export function DishDetailView({ product }: { product: ProductDetail }) {
   return (
     <div className="mx-auto w-full max-w-5xl px-4 pt-4 pb-32 sm:px-6 lg:pb-16">
       <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
-        <div className="lg:sticky lg:top-[calc(var(--header-height)+24px)] lg:self-start"><div className="relative aspect-[4/3] overflow-hidden rounded-[1.5rem] bg-muted">
+        <div className="lg:sticky lg:top-[calc(var(--header-height)+24px)] lg:self-start"><div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-muted">
           {product.images[0] ? (
             <Image
               src={product.images[0]}

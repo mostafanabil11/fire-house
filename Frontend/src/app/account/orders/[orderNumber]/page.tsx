@@ -32,7 +32,7 @@ export default function AccountOrderDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="mx-auto w-full max-w-(--spacing-container-max) px-margin-mobile py-stack-xl md:px-margin-desktop">
+      <div className="page-shell">
         <div className="h-40 animate-pulse bg-muted" />
       </div>
     );
@@ -40,9 +40,9 @@ export default function AccountOrderDetailPage() {
 
   if (isError || !order) {
     return (
-      <div className="mx-auto flex w-full max-w-(--spacing-container-max) flex-col items-center px-margin-mobile py-stack-xl text-center md:px-margin-desktop">
-        <h1 className="mb-4 font-heading text-headline-md font-bold text-foreground">Order Not Found</h1>
-        <Link href="/account/orders" className="text-[13px] text-muted-foreground underline">
+      <div className="page-shell flex flex-col items-center text-center">
+        <h1 className="mb-4 font-heading text-3xl sm:text-4xl text-foreground">Order not found</h1>
+        <Link href="/account/orders" className="text-sm text-muted-foreground underline">
           Back to order history
         </Link>
       </div>
@@ -50,17 +50,17 @@ export default function AccountOrderDetailPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-(--spacing-container-max) px-margin-mobile py-stack-xl md:px-margin-desktop">
-      <Link href="/account/orders" className="mb-6 inline-block text-[13px] text-muted-foreground underline">
+    <div className="page-shell">
+      <Link href="/account/orders" className="mb-6 inline-block text-sm text-muted-foreground underline">
         ← Back to order history
       </Link>
 
       <div className="mb-10 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="font-heading text-headline-sm font-bold text-foreground md:text-headline-md">
+          <h1 className="font-heading text-3xl sm:text-4xl text-foreground">
             {order.orderNumber}
           </h1>
-          <p className="mt-1 text-[13px] text-muted-foreground">
+          <p className="mt-1 text-sm text-muted-foreground">
             Placed on{" "}
             {new Date(order.createdAt).toLocaleDateString("en-US", {
               year: "numeric",

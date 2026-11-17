@@ -61,21 +61,21 @@ function AccountSettingsForm({ user }: { user: User }) {
   const isGoogleAccount = user.authProvider === "google";
 
   return (
-    <div className="page-shell py-stack-xl">
-      <Link href="/account/orders" className="mb-6 inline-block text-[13px] text-muted-foreground underline">
+    <div className="page-shell">
+      <Link href="/account/orders" className="mb-6 inline-block text-sm text-muted-foreground underline">
         ← Back to order history
       </Link>
 
-      <h1 className="mb-10 font-heading text-headline-sm font-bold text-foreground md:text-headline-md">
-        Account Settings
+      <h1 className="mb-10 font-heading text-3xl sm:text-4xl text-foreground">
+        Account settings
       </h1>
 
       <div className="mx-auto max-w-xl space-y-6">
         <section aria-labelledby="profile-heading" className="surface p-5 sm:p-7">
-          <h2 id="profile-heading" className="mb-1 font-heading text-headline-sm font-bold text-foreground">
+          <h2 id="profile-heading" className="mb-1 font-heading text-xl text-foreground">
             Profile
           </h2>
-          <p className="mb-6 text-[13px] text-muted-foreground">{user.email}</p>
+          <p className="mb-6 text-sm text-muted-foreground">{user.email}</p>
 
           <form
             onSubmit={(e) => {
@@ -88,9 +88,9 @@ function AccountSettingsForm({ user }: { user: User }) {
               <div>
                 <label
                   htmlFor="firstName"
-                  className="mb-2 block text-[12px] font-semibold tracking-[0.1em] text-foreground uppercase"
+                  className="mb-2 block text-xs font-semibold tracking-[0.1em] text-foreground uppercase"
                 >
-                  First Name
+                  First name
                 </label>
                 <input
                   id="firstName"
@@ -103,9 +103,9 @@ function AccountSettingsForm({ user }: { user: User }) {
               <div>
                 <label
                   htmlFor="lastName"
-                  className="mb-2 block text-[12px] font-semibold tracking-[0.1em] text-foreground uppercase"
+                  className="mb-2 block text-xs font-semibold tracking-[0.1em] text-foreground uppercase"
                 >
-                  Last Name
+                  Last name
                 </label>
                 <input
                   id="lastName"
@@ -122,23 +122,23 @@ function AccountSettingsForm({ user }: { user: User }) {
               disabled={profileMutation.isPending || (!firstName.trim() || !lastName.trim())}
               className="action-primary"
             >
-              {profileMutation.isPending ? "Saving…" : "Save Changes"}
+              {profileMutation.isPending ? "Saving…" : "Save changes"}
             </button>
           </form>
         </section>
 
         <section aria-labelledby="password-heading" className="surface p-5 sm:p-7">
-          <h2 id="password-heading" className="mb-1 font-heading text-headline-sm font-bold text-foreground">
+          <h2 id="password-heading" className="mb-1 font-heading text-xl text-foreground">
             Password
           </h2>
 
           {isGoogleAccount ? (
-            <p className="text-[13px] text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               You sign in with Google, so there&apos;s no separate password to change here.
             </p>
           ) : (
             <>
-              <p className="mb-6 text-[13px] text-muted-foreground">
+              <p className="mb-6 text-sm text-muted-foreground">
                 Changing your password will sign you out everywhere, including this device.
               </p>
               <form
@@ -151,9 +151,9 @@ function AccountSettingsForm({ user }: { user: User }) {
                 <div>
                   <label
                     htmlFor="currentPassword"
-                    className="mb-2 block text-[12px] font-semibold tracking-[0.1em] text-foreground uppercase"
+                    className="mb-2 block text-xs font-semibold tracking-[0.1em] text-foreground uppercase"
                   >
-                    Current Password
+                    Current password
                   </label>
                   <input
                     id="currentPassword"
@@ -167,9 +167,9 @@ function AccountSettingsForm({ user }: { user: User }) {
                 <div>
                   <label
                     htmlFor="newPassword"
-                    className="mb-2 block text-[12px] font-semibold tracking-[0.1em] text-foreground uppercase"
+                    className="mb-2 block text-xs font-semibold tracking-[0.1em] text-foreground uppercase"
                   >
-                    New Password
+                    New password
                   </label>
                   <input
                     id="newPassword"
@@ -180,7 +180,7 @@ function AccountSettingsForm({ user }: { user: User }) {
                     onChange={(e) => setNewPassword(e.target.value)}
                     className="form-field"
                   />
-                  <p className="mt-2 text-[12px] text-muted-foreground">
+                  <p className="mt-2 text-xs text-muted-foreground">
                     At least 6 characters, with an uppercase letter, a lowercase letter, and a number.
                   </p>
                 </div>
@@ -190,7 +190,7 @@ function AccountSettingsForm({ user }: { user: User }) {
                   disabled={passwordMutation.isPending || !currentPassword || !newPassword}
                   className="action-primary"
                 >
-                  {passwordMutation.isPending ? "Changing…" : "Change Password"}
+                  {passwordMutation.isPending ? "Changing…" : "Change password"}
                 </button>
               </form>
             </>

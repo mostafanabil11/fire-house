@@ -26,7 +26,7 @@ import { OrderProgress } from "@/components/orders/order-progress";
 import { OrderItems } from "@/components/orders/order-items";
 import { CancelOrderButton, isCancellable } from "@/components/orders/cancel-order-button";
 
-const CARD = "rounded-[1.5rem] border border-border bg-card";
+const CARD = "rounded-2xl border border-border bg-card";
 
 function SectionHeading({ icon, children }: { icon: React.ReactNode; children: React.ReactNode }) {
   return (
@@ -79,10 +79,10 @@ export default function OrderConfirmationPage() {
   if (isLoading) {
     return (
       <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
-        <div className="h-56 animate-pulse rounded-[1.5rem] bg-muted" />
+        <div className="h-56 animate-pulse rounded-2xl bg-muted" />
         <div className="mt-4 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
-          <div className="h-80 animate-pulse rounded-[1.5rem] bg-muted" />
-          <div className="h-64 animate-pulse rounded-[1.5rem] bg-muted" />
+          <div className="h-80 animate-pulse rounded-2xl bg-muted" />
+          <div className="h-64 animate-pulse rounded-2xl bg-muted" />
         </div>
       </div>
     );
@@ -95,7 +95,7 @@ export default function OrderConfirmationPage() {
         {/* The most likely cause for a guest is a reopened link in a new tab:
             the one-time token lives in sessionStorage and doesn't survive
             that. The email lookup is the way back in. */}
-        <p className="mb-7 text-body-md text-muted-foreground">
+        <p className="mb-7 text-base text-muted-foreground">
           If you checked out as a guest, look your order up with your order number and the email address you
           used.
         </p>
@@ -105,7 +105,7 @@ export default function OrderConfirmationPage() {
         >
           Track your order
         </Link>
-        <Link href="/" className="mt-6 text-[13px] text-muted-foreground underline underline-offset-2">
+        <Link href="/" className="mt-6 text-sm text-muted-foreground underline underline-offset-2">
           Back to home
         </Link>
       </div>
@@ -136,7 +136,7 @@ export default function OrderConfirmationPage() {
           <h1 className="font-heading text-3xl font-black tracking-[-0.04em] sm:text-4xl">
             {isCancelled ? "Order cancelled" : `Thanks, ${order.shippingAddress.firstName}!`}
           </h1>
-          <p className="mx-auto mt-2 max-w-md text-body-md text-muted-foreground">
+          <p className="mx-auto mt-2 max-w-md text-base text-muted-foreground">
             {isCancelled
               ? "This order has been cancelled and nothing will be charged."
               : "Your order is in — our kitchen is on it."}
@@ -157,7 +157,7 @@ export default function OrderConfirmationPage() {
         {/* The three things someone checks first: when, how much, how paid. */}
         <dl className="grid divide-y divide-border sm:grid-cols-3 sm:divide-x sm:divide-y-0">
           <div className="px-5 py-5 text-center sm:px-6">
-            <dt className="flex items-center justify-center gap-1.5 text-[11px] font-black tracking-[0.1em] text-muted-foreground uppercase">
+            <dt className="flex items-center justify-center gap-1.5 text-xs font-black tracking-[0.1em] text-muted-foreground uppercase">
               <Clock3 className="size-3.5" strokeWidth={2.5} />
               {isCancelled ? "Placed" : "Arriving"}
             </dt>
@@ -176,7 +176,7 @@ export default function OrderConfirmationPage() {
           </div>
 
           <div className="px-5 py-5 text-center sm:px-6">
-            <dt className="flex items-center justify-center gap-1.5 text-[11px] font-black tracking-[0.1em] text-muted-foreground uppercase">
+            <dt className="flex items-center justify-center gap-1.5 text-xs font-black tracking-[0.1em] text-muted-foreground uppercase">
               <ReceiptText className="size-3.5" strokeWidth={2.5} />
               Total
             </dt>
@@ -189,7 +189,7 @@ export default function OrderConfirmationPage() {
           </div>
 
           <div className="px-5 py-5 text-center sm:px-6">
-            <dt className="flex items-center justify-center gap-1.5 text-[11px] font-black tracking-[0.1em] text-muted-foreground uppercase">
+            <dt className="flex items-center justify-center gap-1.5 text-xs font-black tracking-[0.1em] text-muted-foreground uppercase">
               <Truck className="size-3.5" strokeWidth={2.5} />
               Payment
             </dt>
@@ -252,7 +252,7 @@ export default function OrderConfirmationPage() {
                     </span>
                     <div>
                       <p className="text-sm font-black tracking-tight text-foreground">{title}</p>
-                      <p className="mt-0.5 text-[13px] text-muted-foreground">{body}</p>
+                      <p className="mt-0.5 text-sm text-muted-foreground">{body}</p>
                     </div>
                   </li>
                 ))}
@@ -267,7 +267,7 @@ export default function OrderConfirmationPage() {
             <SectionHeading icon={<ReceiptText className="size-5" strokeWidth={2.25} />}>
               Summary
             </SectionHeading>
-            <dl className="grid gap-2.5 text-[13px]">
+            <dl className="grid gap-2.5 text-sm">
               <div className="flex items-center justify-between">
                 <dt className="text-muted-foreground">Subtotal</dt>
                 <dd className="font-bold text-foreground">{formatPrice(order.subtotal)}</dd>
@@ -302,11 +302,11 @@ export default function OrderConfirmationPage() {
             <p className="text-sm font-black tracking-tight text-foreground">
               {order.shippingAddress.firstName} {order.shippingAddress.lastName}
             </p>
-            <p className="mt-1 text-[13px] text-muted-foreground">{addressText(order.shippingAddress)}</p>
-            <p className="mt-1 text-[13px] text-muted-foreground">{order.shippingAddress.phone}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{addressText(order.shippingAddress)}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{order.shippingAddress.phone}</p>
 
             {order.trackingNumber && (
-              <p className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-muted px-4 py-3 text-[13px]">
+              <p className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-muted px-4 py-3 text-sm">
                 <span className="flex items-center gap-2 text-muted-foreground">
                   <Truck className="size-4" strokeWidth={2.25} />
                   Delivery reference

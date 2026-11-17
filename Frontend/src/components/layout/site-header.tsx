@@ -17,7 +17,9 @@ export function SiteHeader() {
         <LanguageToggle />
       </div>
     </div>
-    <div className="mx-auto flex h-[72px] max-w-7xl items-center gap-2 px-4 sm:gap-4 sm:px-6 lg:h-20">
+    {/* 56px on a phone, where every pixel above the menu counts; these
+        heights and --header-height in globals.css must agree. */}
+    <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-4 sm:h-[72px] sm:gap-4 sm:px-6 lg:h-20">
       <MobileNav sections={[]} />
       <Brand />
       <HeaderNav />

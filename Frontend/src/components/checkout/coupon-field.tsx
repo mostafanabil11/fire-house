@@ -55,7 +55,7 @@ export function CouponField({
 
   if (coupon) {
     return (
-      <div className="flex items-center justify-between rounded-2xl border border-foreground bg-muted px-4 py-3 text-[13px]">
+      <div className="flex items-center justify-between rounded-2xl border border-foreground bg-muted px-4 py-3 text-sm">
         <span className="flex items-center gap-2 text-foreground">
           <Tag className="size-3.5" strokeWidth={1.75} />
           <span className="font-semibold tracking-[0.03em]">{coupon.code}</span>
@@ -93,18 +93,18 @@ export function CouponField({
           }}
           placeholder="Coupon code"
           disabled={mutation.isPending}
-          className="min-w-0 flex-1 bg-background px-4 py-3 text-[13px] tracking-[0.03em] text-foreground placeholder:text-muted-foreground focus:outline-none"
+          className="min-w-0 flex-1 bg-background px-4 py-3 text-base tracking-[0.03em] text-foreground placeholder:text-muted-foreground focus:outline-none"
         />
         <button
           type="submit"
           disabled={!code.trim() || mutation.isPending}
-          className="flex items-center gap-1.5 border-l border-border px-5 text-[12px] font-medium tracking-[0.05em] text-foreground uppercase transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex items-center gap-1.5 border-s border-border px-5 text-sm font-bold text-foreground transition-colors hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
         >
           {mutation.isPending && <Loader2 className="size-3.5 animate-spin" strokeWidth={2} />}
           Apply
         </button>
       </form>
-      {error && <p className="mt-2 text-[12px] text-destructive">{error}</p>}
+      {error && <p className="mt-2 text-xs text-destructive">{error}</p>}
     </div>
   );
 }

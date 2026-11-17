@@ -33,14 +33,14 @@ export function PaymentCallbackContent() {
   }, [searchParams, router, status]);
 
   return (
-    <div className="flex min-h-[60vh] items-center justify-center px-margin-mobile">
+    <div className="flex min-h-[60vh] items-center justify-center px-4">
       <div className="w-full max-w-md text-center">
         {status === "success" && (
           <div className="flex flex-col items-center gap-4">
             <div className="flex size-16 items-center justify-center rounded-full bg-green-50">
               <CheckCircle2 className="size-10 text-green-600" strokeWidth={1.5} />
             </div>
-            <h1 className="font-heading text-headline-sm font-bold text-foreground">
+            <h1 className="font-heading text-xl text-foreground">
               Payment Successful!
             </h1>
             <p className="text-sm text-muted-foreground">
@@ -57,8 +57,8 @@ export function PaymentCallbackContent() {
             <div className="flex size-16 items-center justify-center rounded-full bg-red-50">
               <XCircle className="size-10 text-red-500" strokeWidth={1.5} />
             </div>
-            <h1 className="font-heading text-headline-sm font-bold text-foreground">
-              Payment Failed
+            <h1 className="font-heading text-xl text-foreground">
+              Payment failed
             </h1>
             <p className="text-sm text-muted-foreground">
               Your payment could not be processed. Please try again or choose a different payment method.
@@ -66,15 +66,15 @@ export function PaymentCallbackContent() {
             <div className="mt-4 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/checkout"
-                className="rounded-lg bg-primary px-6 py-3 text-button font-medium tracking-[0.05em] text-primary-foreground uppercase transition-colors hover:bg-primary/90"
+                className="action-primary"
               >
-                Try Again
+                Try again
               </Link>
               <Link
                 href="/cart"
-                className="rounded-lg border border-border px-6 py-3 text-button font-medium tracking-[0.05em] text-foreground uppercase transition-colors hover:bg-muted"
+                className="action-secondary"
               >
-                Back to Cart
+                Back to your order
               </Link>
             </div>
           </div>

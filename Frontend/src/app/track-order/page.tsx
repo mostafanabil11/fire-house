@@ -48,8 +48,8 @@ export default function TrackOrderPage() {
     <div className="page-shell">
       <div className="surface mx-auto max-w-xl">
         <span className="mb-5 grid size-12 place-items-center rounded-2xl bg-secondary text-primary"><ReceiptText className="size-5" aria-hidden /></span>
-        <h1 className="mb-2 font-heading text-headline-md font-bold text-foreground">Track Your Order</h1>
-        <p className="mb-8 text-body-md text-muted-foreground">
+        <h1 className="mb-2 font-heading text-3xl sm:text-4xl text-foreground">Track your order</h1>
+        <p className="mb-8 text-base text-muted-foreground">
           Enter your order number and the email address you used at checkout.
         </p>
 
@@ -62,7 +62,7 @@ export default function TrackOrderPage() {
         >
           <div>
             <label className={labelClass} htmlFor="track-orderNumber">
-              Order Number
+              Order number
             </label>
             <input
               id="track-orderNumber"
@@ -102,7 +102,7 @@ export default function TrackOrderPage() {
             ) : (
               <Search className="size-4" strokeWidth={1.75} />
             )}
-            Find Order
+            Find order
           </button>
         </form>
 
@@ -126,9 +126,9 @@ export default function TrackOrderPage() {
           <div className="mx-auto mt-8 max-w-xl">
             <Link
               href="/"
-              className="block w-full bg-primary py-4 text-center text-button font-medium tracking-[0.05em] text-primary-foreground uppercase transition-colors hover:bg-primary/90"
+              className="action-primary w-full"
             >
-              Continue Shopping
+              Browse the menu
             </Link>
           </div>
         </div>

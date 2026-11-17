@@ -6,9 +6,9 @@ import { toast } from "sonner";
 import { getStoreSettingsClient, updateStoreSettings } from "@/lib/api/settings";
 import { errorMessage } from "@/lib/api/error-message";
 import type { StoreSettings } from "@/types/settings";
+import { AdminPageHeader } from "@/components/admin/ui/page-header";
+import { inputClass } from "@/components/admin/ui/field";
 
-const inputClass =
-  "w-full rounded-2xl border border-border bg-background px-4 py-3 text-base text-foreground outline-none transition-colors focus:border-foreground";
 const labelClass = "mb-1.5 block text-sm font-bold text-foreground";
 
 export default function AdminSettingsPage() {
@@ -18,12 +18,11 @@ export default function AdminSettingsPage() {
   });
 
   return (
-    <div>
-      <p className="eyebrow">Store controls</p>
-      <h1 className="mt-2 font-heading text-3xl font-black tracking-tight">Settings</h1>
+    <div className="grid gap-5">
+      <AdminPageHeader title="Settings" description="Payment and delivery rules customers see at checkout." />
 
       {isLoading || !settings ? (
-        <div className="mt-6 h-64 max-w-lg animate-pulse rounded-2xl bg-muted" />
+        <div className="h-64 max-w-xl animate-pulse rounded-2xl bg-muted" />
       ) : (
         <AdminSettingsForm key={JSON.stringify(settings)} settings={settings} />
       )}
@@ -65,10 +64,10 @@ function AdminSettingsForm({ settings }: { settings: StoreSettings }) {
             e.preventDefault();
             mutation.mutate();
           }}
-          className="mt-6 max-w-xl space-y-6"
+          className="grid max-w-xl gap-4"
         >
           <section className="rounded-2xl border border-border bg-card p-5">
-            <h2 className="font-heading text-lg font-black">Payment</h2>
+            <h2 className="font-heading text-lg">Payment</h2>
 
             <div className="mt-4">
               <label className={labelClass} htmlFor="instapay">
@@ -90,7 +89,7 @@ function AdminSettingsForm({ settings }: { settings: StoreSettings }) {
           </section>
 
           <section className="rounded-2xl border border-border bg-card p-5">
-            <h2 className="font-heading text-lg font-black">Delivery &amp; pricing</h2>
+            <h2 className="font-heading text-lg">Delivery &amp; pricing</h2>
 
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
               <div>
@@ -163,7 +162,7 @@ function AdminSettingsForm({ settings }: { settings: StoreSettings }) {
           <button
             type="submit"
             disabled={mutation.isPending}
-            className="min-h-13 w-full rounded-full bg-primary px-8 text-sm font-black text-primary-foreground transition-transform enabled:hover:-translate-y-0.5 disabled:opacity-50 sm:w-auto"
+            className="action-primary min-h-12 w-full rounded-xl px-8 sm:w-auto sm:justify-self-start"
           >
             {mutation.isPending ? "Saving…" : "Save settings"}
           </button>

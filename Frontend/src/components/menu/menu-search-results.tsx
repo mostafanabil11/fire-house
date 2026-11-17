@@ -14,7 +14,7 @@ export function MenuSearchResults({ q }: { q: string }) {
     return (
       <div className="grid gap-3 md:grid-cols-2">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="h-36 animate-pulse rounded-[1.5rem] bg-muted" />
+          <div key={index} className="h-36 animate-pulse rounded-2xl bg-muted" />
         ))}
       </div>
     );
@@ -22,7 +22,7 @@ export function MenuSearchResults({ q }: { q: string }) {
 
   if (isError) {
     return (
-      <div className="rounded-[1.5rem] border border-border bg-card p-8 text-center">
+      <div className="rounded-2xl border border-border bg-card p-8 text-center">
         <h2 className="font-heading text-xl font-black">The menu could not be searched</h2>
         <p className="mt-2 text-sm text-muted-foreground">Please try again in a moment.</p>
       </div>
@@ -31,7 +31,7 @@ export function MenuSearchResults({ q }: { q: string }) {
 
   if (!data?.items.length) {
     return (
-      <div className="rounded-[1.5rem] border border-border bg-card p-8 text-center">
+      <div className="rounded-2xl border border-border bg-card p-8 text-center">
         <p className="font-bold">Nothing on the menu matches “{q}”.</p>
         <p className="mt-2 text-sm text-muted-foreground">
           Try a dish name, or browse the full menu.

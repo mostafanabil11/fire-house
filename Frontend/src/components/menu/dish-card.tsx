@@ -27,10 +27,10 @@ export function DishCard({ product, featured = false }: { product: Product; feat
   return <article className={`group relative flex overflow-hidden rounded-2xl border border-border/80 bg-card transition-shadow hover:shadow-md hover:shadow-black/5 ${featured ? "flex-col" : "gap-3 p-3 sm:gap-4 sm:p-4"} ${soldOut ? "opacity-65" : ""}`}>
     <Link href={`/menu/${product.slug}`} tabIndex={-1} aria-hidden className={`relative block shrink-0 overflow-hidden bg-muted ${featured ? "aspect-[4/3]" : "size-24 rounded-xl sm:size-32"}`}>
       {product.images[0] ? <Image src={product.images[0]} alt="" fill sizes={featured ? "(min-width:1024px) 400px, (min-width:640px) 50vw, 100vw" : "(min-width:640px) 128px, 96px"} className="object-cover transition-transform duration-500 group-hover:scale-[1.04]" /> : <span className="grid size-full place-items-center"><UtensilsCrossed className="text-primary/50" /></span>}
-      {featured && product.isBestSeller && <span className="absolute start-4 top-4 rounded-full bg-background/95 px-3 py-1 text-[10px] font-extrabold uppercase tracking-wider"><T>Popular</T></span>}
+      {featured && product.isBestSeller && <span className="absolute start-4 top-4 rounded-full bg-background/95 px-3 py-1 text-xs font-extrabold uppercase tracking-wider"><T>Popular</T></span>}
     </Link>
     <div className={`flex min-w-0 flex-1 flex-col ${featured ? "p-5" : "py-0.5"}`}>
-      {!featured && product.isBestSeller && <p className="mb-1 text-[10px] font-extrabold tracking-wider text-primary uppercase"><T>Popular</T></p>}
+      {!featured && product.isBestSeller && <p className="mb-1 text-xs font-extrabold tracking-wider text-primary uppercase"><T>Popular</T></p>}
       <h3 className="font-heading text-[15px] leading-snug sm:text-lg"><Link href={`/menu/${product.slug}`} className="hover:text-primary"><T>{product.name}</T></Link></h3>
       {product.description && <p className="mt-1.5 line-clamp-2 text-xs leading-5 text-muted-foreground sm:text-sm sm:leading-6"><T>{product.description}</T></p>}
       <div className="mt-auto flex flex-wrap items-center justify-between gap-x-2 gap-y-3 pt-4">

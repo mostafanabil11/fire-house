@@ -1,16 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, ChefHat, ShoppingBag, SlidersHorizontal } from "lucide-react";
-import { getBestSellersServer } from "@/lib/api/products";
+import { ArrowRight, ChefHat, ShoppingBag, SlidersHorizontal, UtensilsCrossed } from "lucide-react";
+import { getBestSellersServer, getMenuServer } from "@/lib/api/products";
 import { getCategoryTreeServer } from "@/lib/api/categories";
 import { DishCard } from "@/components/menu/dish-card";
 import { T } from "@/i18n/language-provider";
 
 export default async function Home() {
-  const [sections, popular] = await Promise.all([getCategoryTreeServer(), getBestSellersServer()]);
+  const [sections, popular, dishes] = await Promise.all([getCategoryTreeServer(), getBestSellersServer(), getMenuServer()]);
+  // A section without a photo of its own borrows its first dish's, so every
+  // tile shows food. Same cached menu request the menu page makes.
+  const sectionImage = (sectionId: string, own: string | null) =>
+    own ?? dishes.find(dish => (typeof dish.category === "string" ? dish.category : dish.category?._id) === sectionId && dish.images[0])?.images[0] ?? null;
   return <div className="pb-16">
     <section className="px-4 pt-4 sm:px-6 sm:pt-6">
-      <div className="relative mx-auto min-h-[460px] max-w-7xl overflow-hidden rounded-[2rem] bg-foreground sm:min-h-[520px] lg:min-h-[570px]">
+      <div className="relative mx-auto min-h-[460px] max-w-7xl overflow-hidden rounded-3xl bg-foreground sm:min-h-[520px] lg:min-h-[570px]">
         <Image src="/images/restaurant/hero.webp" alt="Burgers, crispy chicken and loaded fries" fill priority sizes="(max-width: 1280px) 100vw, 1280px" className="object-cover object-[center_35%] sm:object-center" />
         {/* Bottom-up scrim on phones, where the copy spans the full width; a
             side scrim from sm up, so the food stays visible beside the text.
@@ -48,8 +52,15 @@ export default async function Home() {
         <div><p className="eyebrow"><T>Find your favourite</T></p><h2 className="mt-2 font-heading text-3xl sm:text-4xl"><T>What are you craving?</T></h2></div>
         <Link href="/menu" className="inline-flex min-h-11 items-center gap-2 text-sm font-bold text-primary"><T>See full menu</T><ArrowRight className="size-4" aria-hidden /></Link>
       </div>
-      <div className="mt-6 flex flex-wrap gap-2">
-        {sections.map(section=><Link key={section._id} href={`/menu#${section.slug}`} className="action-secondary"><T>{section.name}</T><ArrowRight className="size-3.5" aria-hidden /></Link>)}
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {sections.map(section=><Link key={section._id} href={`/menu#${section.slug}`} className="group overflow-hidden rounded-2xl border border-border bg-card transition-shadow hover:shadow-md hover:shadow-black/5">
+          <span className="relative block aspect-[4/3] overflow-hidden bg-secondary">
+            {sectionImage(section._id, section.image)
+              ? <Image src={sectionImage(section._id, section.image)!} alt="" fill sizes="(min-width:640px) 25vw, 50vw" className="object-cover transition-transform duration-500 group-hover:scale-[1.04]" />
+              : <span className="grid size-full place-items-center text-primary/60"><UtensilsCrossed className="size-8" aria-hidden /></span>}
+          </span>
+          <span className="flex min-h-12 items-center justify-between gap-2 px-4 py-3 font-heading text-base"><T>{section.name}</T><ArrowRight className="size-4 shrink-0 text-primary" aria-hidden /></span>
+        </Link>)}
       </div>
     </section>
 

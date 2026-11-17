@@ -1,131 +1,164 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, TrendingUp } from "lucide-react";
+import { ArrowRight, CheckCircle2, TrendingUp } from "lucide-react";
 import { getDashboard } from "@/lib/api/admin";
-import { getAdminOrders } from "@/lib/api/orders";
 import { formatPrice } from "@/lib/format";
-import { OrderCard } from "@/components/admin/order-card";
-import { queueStatuses } from "@/lib/staff-orders";
+import { useWaitingOrders } from "@/hooks/use-waiting-orders";
+import { useStaffAlerts } from "@/components/admin/new-order-watcher";
+import { OrderRowList } from "@/components/admin/order-row";
+import { AdminPageHeader } from "@/components/admin/ui/page-header";
+import { Panel } from "@/components/admin/ui/panel";
+import { EmptyState } from "@/components/admin/ui/empty-state";
+import { splitWaiting } from "@/lib/staff-orders";
+import { T } from "@/i18n/language-provider";
+import { cn } from "@/lib/utils";
+import type { AdminOrderListItem } from "@/lib/api/orders";
 
-function Stat({
+function Tile({
   label,
   value,
   hint,
   emphasis = false,
+  href,
 }: {
   label: string;
-  value: string | number;
+  value: React.ReactNode;
   hint?: string;
   emphasis?: boolean;
+  href?: string;
 }) {
-  return (
-    <div
-      className={`rounded-2xl border p-5 ${
-        emphasis ? "border-foreground bg-foreground text-background" : "border-border bg-card"
-      }`}
-    >
-      <p
-        className={`text-[0.7rem] font-black tracking-[0.12em] uppercase ${
-          emphasis ? "text-background/60" : "text-muted-foreground"
-        }`}
-      >
+  const body = (
+    <>
+      <p className={cn("text-sm font-bold", emphasis ? "text-background/70" : "text-muted-foreground")}>
         {label}
       </p>
-      <p className="mt-1.5 font-heading text-3xl font-black tracking-tight">{value}</p>
+      <p className="mt-1.5 font-heading text-3xl tabular-nums">{value}</p>
       {hint && (
-        <p className={`mt-1 text-xs ${emphasis ? "text-background/60" : "text-muted-foreground"}`}>
+        <p className={cn("mt-1 text-xs", emphasis ? "text-background/70" : "text-muted-foreground")}>
           {hint}
         </p>
       )}
-    </div>
+    </>
+  );
+  const className = cn(
+    "block rounded-2xl border p-4 sm:p-5",
+    emphasis ? "border-foreground bg-foreground text-background" : "border-border bg-card",
+    href && "transition-transform hover:-translate-y-0.5",
+  );
+  return href ? (
+    <Link href={href} className={className}>
+      {body}
+    </Link>
+  ) : (
+    <div className={className}>{body}</div>
   );
 }
 
-export default function AdminDashboardPage() {
+export default function AdminOverviewPage() {
   const { data, isLoading } = useQuery({ queryKey: ["admin", "dashboard"], queryFn: getDashboard });
+  const waiting = useWaitingOrders();
+  const { waitingCount } = useStaffAlerts();
 
-  // The dashboard opens on the work, not on analytics — the first thing the
-  // owner wants to know is whether anything is waiting.
-  const { data: waiting } = useQuery({
-    queryKey: ["admin", "orders", "action", ""],
-    queryFn: () => getAdminOrders({ limit: 5, fulfillmentStatus: queueStatuses("waiting").join(",") }),
-    refetchInterval: 15_000,
-  });
+  // Orders staff can confirm first, then any waiting on a card payment; each
+  // oldest first.
+  const waitingList = useMemo(() => {
+    const { toConfirm, awaitingPayment } = splitWaiting<AdminOrderListItem>(
+      waiting.data?.items ?? [],
+    );
+    return [...toConfirm, ...awaitingPayment].slice(0, 5);
+  }, [waiting.data]);
 
-  const needsAction = waiting?.pagination.total ?? 0;
+  const loading = isLoading || !data;
+  const topSold = data?.topProducts[0]?.quantitySold ?? 0;
 
   return (
-    <div>
-      <h1 className="font-heading text-2xl font-black tracking-tight">Dashboard</h1>
+    <div className="grid gap-6">
+      <AdminPageHeader title="Overview" />
 
-      <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat
-          label="Waiting"
-          value={needsAction}
-          hint={needsAction === 0 ? "All caught up" : "To confirm"}
-          emphasis={needsAction > 0}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Tile
+          label="Waiting now"
+          value={waitingCount}
+          hint={waitingCount === 0 ? "All caught up" : "To confirm"}
+          emphasis={waitingCount > 0}
+          href="/admin/orders"
         />
-        <Stat
-          label="Revenue"
-          value={isLoading || !data ? "…" : formatPrice(data.revenue)}
-          hint="Paid orders, all time"
-        />
-        <Stat label="Orders" value={isLoading || !data ? "…" : data.totalOrders} />
-        <Stat
+        <Tile label="Orders" value={loading ? "…" : data.totalOrders} hint="All time" />
+        <Tile
           label="Confirmed"
-          value={isLoading || !data ? "…" : (data.ordersByStatus.confirmed ?? 0)}
+          value={loading ? "…" : (data.ordersByStatus.confirmed ?? 0)}
+          hint="All time"
+        />
+        <Tile
+          label="Revenue"
+          value={loading ? "…" : <T>{formatPrice(data.revenue)}</T>}
+          hint="Paid orders, all time"
         />
       </div>
 
-      <section className="mt-8">
+      <section className="grid gap-3">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="font-heading text-lg font-black">Waiting now</h2>
-          <Link
-            href="/admin/orders"
-            className="inline-flex min-h-10 items-center gap-1 text-sm font-bold text-primary hover:underline"
-          >
-            All orders <ChevronRight className="size-4" aria-hidden />
+          <h2 className="font-heading text-xl">Waiting now</h2>
+          <Link href="/admin/orders" className="action-secondary min-h-11 px-4">
+            Open orders
+            <ArrowRight className="size-4" aria-hidden />
           </Link>
         </div>
-
-        <div className="mt-3 grid gap-3">
-          {!waiting ? (
-            <div className="h-32 animate-pulse rounded-2xl bg-muted" />
-          ) : waiting.items.length === 0 ? (
-            <div className="rounded-2xl border border-border bg-card p-8 text-center">
-              <p className="font-bold">Nothing waiting</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                New orders show up here and on the orders screen by themselves.
-              </p>
-            </div>
-          ) : (
-            waiting.items.map((order) => <OrderCard key={order._id} order={order} />)
-          )}
-        </div>
+        {!waiting.data ? (
+          <div className="h-32 animate-pulse rounded-2xl bg-muted" />
+        ) : waitingList.length === 0 ? (
+          <EmptyState
+            icon={<CheckCircle2 aria-hidden />}
+            title="Nothing waiting"
+            description="New orders show up here and on the orders screen by themselves."
+          />
+        ) : (
+          <OrderRowList orders={waitingList} />
+        )}
       </section>
 
       {data && data.topProducts.length > 0 && (
-        <section className="mt-8">
-          <h2 className="flex items-center gap-2 font-heading text-lg font-black">
-            <TrendingUp className="size-5 text-primary" strokeWidth={2.5} aria-hidden />
-            Best sellers
-          </h2>
-          <ul className="mt-3 grid gap-2">
-            {data.topProducts.map((product) => (
-              <li
-                key={product._id}
-                className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-card px-4 py-3 text-sm"
-              >
-                <span className="font-bold">{product.name}</span>
-                <span className="shrink-0 text-muted-foreground">
-                  {product.quantitySold} sold · {formatPrice(product.revenue)}
+        <Panel
+          title={
+            <span className="flex items-center gap-2">
+              <TrendingUp className="size-5 text-primary" strokeWidth={2.5} aria-hidden />
+              Best sellers
+            </span>
+          }
+        >
+          <ol className="grid gap-4">
+            {data.topProducts.map((product, index) => (
+              <li key={product._id} className="flex items-start gap-3">
+                <span className="grid size-8 shrink-0 place-items-center rounded-full bg-muted text-sm font-extrabold tabular-nums">
+                  {index + 1}
                 </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-4">
+                    <p className="font-bold">
+                      <T>{product.name}</T>
+                    </p>
+                    <p className="text-sm text-muted-foreground tabular-nums">
+                      {`${product.quantitySold} sold`}
+                      <span aria-hidden> · </span>
+                      <T>{formatPrice(product.revenue)}</T>
+                    </p>
+                  </div>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+                    <div
+                      className="h-full rounded-full bg-primary"
+                      style={{
+                        width: `${topSold > 0 ? Math.max(4, (product.quantitySold / topSold) * 100) : 0}%`,
+                      }}
+                    />
+                  </div>
+                </div>
               </li>
             ))}
-          </ul>
-        </section>
+          </ol>
+        </Panel>
       )}
     </div>
   );

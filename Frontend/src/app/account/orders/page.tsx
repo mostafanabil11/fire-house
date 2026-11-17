@@ -30,10 +30,10 @@ export default function OrderHistoryPage() {
   }
 
   return (
-    <div className="page-shell py-stack-xl">
+    <div className="page-shell">
       <p className="eyebrow">Your account</p>
-      <h1 className="mt-2 mb-10 font-heading text-headline-sm font-bold text-foreground md:text-headline-md">
-        Order History
+      <h1 className="mt-2 mb-10 font-heading text-3xl sm:text-4xl text-foreground">
+        Order history
       </h1>
 
       {isLoading ? (
@@ -44,12 +44,12 @@ export default function OrderHistoryPage() {
         </div>
       ) : !orders || orders.length === 0 ? (
         <div className="flex flex-col items-center py-24 text-center">
-          <p className="mb-8 text-body-lg text-muted-foreground">You haven&apos;t placed any orders yet.</p>
+          <p className="mb-8 text-lg text-muted-foreground">You haven&apos;t placed any orders yet.</p>
           <Link
             href="/"
             className="action-primary"
           >
-            Start Shopping
+            Browse the menu
           </Link>
         </div>
       ) : (
@@ -61,8 +61,8 @@ export default function OrderHistoryPage() {
               className="surface flex flex-col gap-3 p-5 transition-colors hover:border-foreground/25 hover:bg-muted/30 md:flex-row md:items-center md:justify-between"
             >
               <div>
-                <p className="text-body-md font-medium text-foreground">{order.orderNumber}</p>
-                <p className="mt-1 text-[13px] text-muted-foreground">
+                <p className="text-base font-medium text-foreground">{order.orderNumber}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
                   {new Date(order.createdAt).toLocaleDateString("en-US", {
                     year: "numeric",
                     month: "long",
@@ -75,7 +75,7 @@ export default function OrderHistoryPage() {
               </div>
               <div className="flex items-center gap-6">
                 <OrderStatusBadge fulfillmentStatus={order.fulfillmentStatus} paymentStatus={order.paymentStatus} />
-                <p className="text-body-md font-semibold text-foreground">{formatPrice(order.total)}</p>
+                <p className="text-base font-semibold text-foreground">{formatPrice(order.total)}</p>
               </div>
             </Link>
           ))}

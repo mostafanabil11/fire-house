@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { ScrollText } from "lucide-react";
 import { getAuditLog } from "@/lib/api/admin";
+import { AdminPageHeader } from "@/components/admin/ui/page-header";
+import { EmptyState } from "@/components/admin/ui/empty-state";
+import { Pagination } from "@/components/admin/ui/pagination";
 
 export default function AdminAuditLogPage() {
   const [page, setPage] = useState(1);
@@ -13,60 +17,40 @@ export default function AdminAuditLogPage() {
   });
 
   return (
-    <div>
-      <h1 className="mb-8 font-heading text-headline-sm font-bold text-foreground">Audit Log</h1>
+    <div className="grid gap-5">
+      <AdminPageHeader title="Audit log" description="Every change made from this dashboard, newest first." />
 
       {isLoading || !data ? (
-        <div className="h-64 animate-pulse bg-muted" />
+        <div className="h-64 animate-pulse rounded-2xl bg-muted" />
       ) : data.items.length === 0 ? (
-        <p className="text-[13px] text-muted-foreground">No admin actions recorded yet.</p>
+        <EmptyState icon={<ScrollText aria-hidden />} title="No admin actions recorded yet." />
       ) : (
         <>
-          <div className="divide-y divide-border border-t border-b border-border">
+          <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
             {data.items.map((entry) => (
-              <div key={entry._id} className="py-3 text-[13px]">
+              <li key={entry._id} className="px-4 py-3 sm:px-5">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-medium text-foreground">{entry.action}</span>
-                  <span className="text-[12px] text-muted-foreground">
-                    {new Date(entry.createdAt).toLocaleString("en-US", {
-                      month: "short",
+                  <span className="font-mono text-sm font-bold" data-i18n-ignore>
+                    {entry.action}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {new Date(entry.createdAt).toLocaleString("en-GB", {
                       day: "numeric",
+                      month: "short",
                       hour: "numeric",
                       minute: "2-digit",
                     })}
                   </span>
                 </div>
-                <p className="mt-1 text-[12px] text-muted-foreground">
+                <p className="mt-0.5 text-sm text-muted-foreground" data-i18n-ignore>
                   {entry.adminEmail ?? "Unknown admin"}
                   {entry.resultSummary?.id && ` · ${entry.resultSummary.id}`}
                 </p>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
 
-          {data.pagination.pages > 1 && (
-            <div className="mt-6 flex items-center justify-center gap-4 text-[13px]">
-              <button
-                type="button"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="text-muted-foreground underline disabled:opacity-30"
-              >
-                Previous
-              </button>
-              <span className="text-muted-foreground">
-                Page {data.pagination.page} of {data.pagination.pages}
-              </span>
-              <button
-                type="button"
-                onClick={() => setPage((p) => Math.min(data.pagination.pages, p + 1))}
-                disabled={page === data.pagination.pages}
-                className="text-muted-foreground underline disabled:opacity-30"
-              >
-                Next
-              </button>
-            </div>
-          )}
+          <Pagination page={data.pagination.page} pages={data.pagination.pages} onChange={setPage} />
         </>
       )}
     </div>

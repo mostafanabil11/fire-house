@@ -36,7 +36,7 @@ export function NewsletterForm() {
       <button
         type="submit"
         disabled={mutation.isPending}
-        className="shrink-0 border border-foreground px-4 py-2.5 text-[11px] font-semibold tracking-[0.1em] text-foreground uppercase transition-colors hover:bg-foreground hover:text-background disabled:opacity-50"
+        className="shrink-0 border border-foreground px-4 py-2.5 text-xs font-semibold tracking-[0.1em] text-foreground uppercase transition-colors hover:bg-foreground hover:text-background disabled:opacity-50"
       >
         Join
       </button>

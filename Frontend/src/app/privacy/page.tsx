@@ -3,22 +3,22 @@ import Link from "next/link";
 import { RESTAURANT } from "@/config/restaurant";
 
 export const metadata: Metadata = {
-  title: `Privacy Policy — ${RESTAURANT.name}`,
+  title: `Privacy policy — ${RESTAURANT.name}`,
   description: `How ${RESTAURANT.name} collects, uses, and protects your personal information.`,
 };
 
 export default function PrivacyPage() {
   return (
-    <div className="mx-auto w-full max-w-(--spacing-container-max) px-margin-mobile py-stack-xl md:px-margin-desktop">
+    <div className="page-shell">
       <div className="mx-auto max-w-2xl">
-        <h1 className="mb-2 font-heading text-headline-sm font-bold text-foreground md:text-headline-md">
-          Privacy Policy
+        <h1 className="mb-2 font-heading text-3xl sm:text-4xl text-foreground">
+          Privacy policy
         </h1>
-        <p className="mb-12 text-[13px] text-muted-foreground">Last updated August 2026</p>
+        <p className="mb-12 text-sm text-muted-foreground">Last updated August 2026</p>
 
-        <div className="space-y-10 text-[14px] leading-relaxed text-muted-foreground">
+        <div className="space-y-10 text-base leading-7 text-muted-foreground">
           <section>
-            <h2 className="mb-3 font-heading text-headline-sm font-bold text-foreground">Information We Collect</h2>
+            <h2 className="mb-3 font-heading text-xl text-foreground">Information we collect</h2>
             <p>
               When you create an account, we collect your name, email address, and password (stored as a
               one-way hash — we never see or store it in plain text). When you place an order, we also collect
@@ -28,7 +28,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="mb-3 font-heading text-headline-sm font-bold text-foreground">How We Use It</h2>
+            <h2 className="mb-3 font-heading text-xl text-foreground">How we use it</h2>
             <p>
               Your information is used to prepare and deliver orders, send order confirmations and status
               updates, keep your account signed in securely, and apply coupons you choose to redeem. We do not
@@ -37,7 +37,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="mb-3 font-heading text-headline-sm font-bold text-foreground">Payment Information</h2>
+            <h2 className="mb-3 font-heading text-xl text-foreground">Payment information</h2>
             <p>
               Card payments are processed by Paymob, our payment provider. Your card number and details are
               entered directly into Paymob&apos;s secure payment form — our servers never receive or
@@ -46,7 +46,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="mb-3 font-heading text-headline-sm font-bold text-foreground">Cookies</h2>
+            <h2 className="mb-3 font-heading text-xl text-foreground">Cookies</h2>
             <p>
               We use essential cookies to keep you signed in (httpOnly authentication cookies that JavaScript
               cannot read) and to remember items in your bag if you&apos;re not signed in. We don&apos;t use
@@ -55,11 +55,11 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="mb-3 font-heading text-headline-sm font-bold text-foreground">Your Choices</h2>
+            <h2 className="mb-3 font-heading text-xl text-foreground">Your choices</h2>
             <p>
               You can review and update your name from{" "}
               <Link href="/account/settings" className="text-foreground underline">
-                Account Settings
+                Account settings
               </Link>{" "}
               at any time, and view your full order history from your account. To request deletion of your
               account or data, contact us using the details on our{" "}
@@ -71,7 +71,7 @@ export default function PrivacyPage() {
           </section>
 
           <section>
-            <h2 className="mb-3 font-heading text-headline-sm font-bold text-foreground">Contact</h2>
+            <h2 className="mb-3 font-heading text-xl text-foreground">Contact</h2>
             <p>
               Questions about this policy can be sent through our{" "}
               <Link href="/contact" className="text-foreground underline">contact page</Link>.

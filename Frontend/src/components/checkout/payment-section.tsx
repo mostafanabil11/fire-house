@@ -294,7 +294,7 @@ function CardPaymentFrame({
                   />
       </div>
 
-      <p className="border-t border-border bg-muted/60 px-4 py-2 text-[11px] text-muted-foreground">
+      <p className="border-t border-border bg-muted/60 px-4 py-2 text-xs text-muted-foreground">
         Processed securely by Paymob. We never see or store your card details.
       </p>
     </div>

@@ -10,59 +10,15 @@
   --font-sans: var(--font-body);
   --font-heading: var(--font-display);
 
-  /* Stitch design tokens — spacing */
-  --spacing-unit: 8px;
-  --spacing-gutter: 24px;
-  --spacing-stack-md: 48px;
-  --spacing-stack-xl: 64px;
-  --spacing-margin-mobile: 20px;
-  --spacing-margin-desktop: 64px;
-  --spacing-container-max: 1440px;
+  /* Status colours for the staff screens. Each soft background has a strong
+     foreground meant to sit on it; colour always comes with a word. */
+  --color-success-soft: var(--success-soft);
+  --color-success-strong: var(--success-strong);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-strong: var(--warning-strong);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-strong: var(--danger-strong);
 
-  /* Stitch design tokens — type scale */
-  --text-label-caps: 12px;
-  --text-label-caps--line-height: 1;
-  --text-label-caps--letter-spacing: 0.1em;
-  --text-label-caps--font-weight: 600;
-
-  --text-button: 14px;
-  --text-button--line-height: 1;
-  --text-button--letter-spacing: 0.05em;
-  --text-button--font-weight: 500;
-
-  --text-body-md: 16px;
-  --text-body-md--line-height: 1.6;
-
-  --text-body-lg: 18px;
-  --text-body-lg--line-height: 1.6;
-  --text-body-lg--letter-spacing: 0.01em;
-
-  --text-headline-sm: 24px;
-  --text-headline-sm--line-height: 1.4;
-
-  --text-headline-md: 32px;
-  --text-headline-md--line-height: 1.3;
-
-  --text-display-lg-mobile: 40px;
-  --text-display-lg-mobile--line-height: 1.2;
-
-  --text-display-lg: 64px;
-  --text-display-lg--line-height: 1.1;
-  --text-display-lg--letter-spacing: -0.02em;
-
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -110,20 +66,13 @@
   --input: oklch(0.86 0.025 72);
   --ring: oklch(0.61 0.205 34);
   --success: oklch(0.73 0.17 142);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --success-soft: oklch(0.95 0.045 150);
+  --success-strong: oklch(0.4 0.1 150);
+  --warning-soft: oklch(0.95 0.06 85);
+  --warning-strong: oklch(0.42 0.09 65);
+  --danger-soft: oklch(0.95 0.03 25);
+  --danger-strong: oklch(0.45 0.18 27);
   --radius: 0.9rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
 }
 
 .dark {
@@ -145,19 +94,6 @@
   --border: oklch(1 0 0 / 13%);
   --input: oklch(1 0 0 / 18%);
   --ring: oklch(0.66 0.195 34);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
 }
 
 @layer base {
@@ -245,7 +181,9 @@ html[dir="rtl"] :is(.lucide-arrow-right, .lucide-chevron-right, .lucide-chevron-
 }
 
 /* Shared restaurant UI, used by customer and staff screens. */
-:root { --header-height: 104px; }
+/* The 32px announcement bar plus the main bar: 56px on phones, 72px from sm,
+   80px from lg. Sticky menu navigation and scroll offsets read this. */
+:root { --header-height: 88px; }
 html { overflow-x: clip; scroll-behavior: smooth; scroll-padding-top: calc(var(--header-height) + 90px); }
 body { overflow-x: clip; line-height: 1.6; }
 ::selection { background: var(--secondary); color: var(--foreground); }
@@ -269,6 +207,7 @@ input::placeholder, textarea::placeholder { color: var(--muted-foreground); opac
 :where(main, [role="dialog"]) textarea, :where(main, [role="dialog"]) select { border-radius: 12px; }
 html[lang="ar"] .font-heading { letter-spacing: 0; line-height: 1.5; }
 html[lang="ar"] .eyebrow { letter-spacing: 0; }
+@media (min-width: 640px) { :root { --header-height: 104px; } }
 @media (min-width: 1024px) { :root { --header-height: 112px; } }
 @media (max-width: 639px) { .page-shell { padding: 28px 16px 48px; } .surface { padding: 20px; } }
 @media (prefers-reduced-motion: reduce) {

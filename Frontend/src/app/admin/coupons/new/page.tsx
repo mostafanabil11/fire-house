@@ -1,15 +1,16 @@
 "use client";
 
-import Link from "next/link";
 import { CouponForm } from "@/components/admin/coupon-form";
+import { AdminPageHeader } from "@/components/admin/ui/page-header";
+import { AdminBackLink } from "@/components/admin/ui/back-link";
 
 export default function NewCouponPage() {
   return (
-    <div>
-      <Link href="/admin/coupons" className="mb-6 inline-block text-[13px] text-muted-foreground underline">
-        ← Back to coupons
-      </Link>
-      <h1 className="mb-8 font-heading text-headline-sm font-bold text-foreground">New Coupon</h1>
+    <div className="grid gap-5">
+      <div>
+        <AdminBackLink href="/admin/coupons">Coupons</AdminBackLink>
+        <AdminPageHeader title="New coupon" />
+      </div>
       <CouponForm />
     </div>
   );

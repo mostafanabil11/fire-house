@@ -4,6 +4,7 @@ import { Providers } from "@/components/providers";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
 import { BrowseCartBar } from "@/components/menu/browse-cart-bar";
+import { StorefrontOnly } from "@/components/layout/storefront-only";
 import { RESTAURANT } from "@/config/restaurant";
 import "./globals.css";
 
@@ -53,12 +54,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           Skip to main content
         </a>
         <Providers>
-          <SiteHeader />
+          <StorefrontOnly>
+            <SiteHeader />
+          </StorefrontOnly>
           <main id="main-content" className="flex-1">
             {children}
           </main>
-          <SiteFooter />
-          <BrowseCartBar />
+          <StorefrontOnly>
+            <SiteFooter />
+            <BrowseCartBar />
+          </StorefrontOnly>
         </Providers>
       </body>
     </html>

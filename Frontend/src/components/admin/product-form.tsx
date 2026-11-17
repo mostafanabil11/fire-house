@@ -10,6 +10,8 @@ import { getAdminCategoryTree } from "@/lib/api/categories";
 import type { Product, ProductSize } from "@/types/product";
 import type { Category } from "@/types/category";
 import { errorMessage } from "@/lib/api/error-message";
+import { Panel } from "@/components/admin/ui/panel";
+import { CheckboxField, Field, inputClass } from "@/components/admin/ui/field";
 
 const ALL_SIZES: ProductSize[] = ["S", "M", "L", "XL", "2XL"];
 
@@ -73,17 +75,13 @@ export function ProductForm({ product }: { product?: Product }) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin", "products"] });
-      toast.success(isEdit ? "Product updated" : "Product created");
+      toast.success(isEdit ? "Dish updated" : "Dish created");
       router.push("/admin/products");
     },
     onError: (err: unknown) => {
-      toast.error(errorMessage(err, "Could not save product"));
+      toast.error(errorMessage(err, "Could not save dish"));
     },
   });
-
-  const inputClass =
-    "w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-foreground";
-  const labelClass = "mb-1.5 block text-[11px] font-semibold tracking-[0.1em] text-foreground uppercase";
 
   return (
     <form
@@ -91,100 +89,108 @@ export function ProductForm({ product }: { product?: Product }) {
         e.preventDefault();
         mutation.mutate();
       }}
-      className="max-w-2xl space-y-6"
+      className="grid max-w-3xl gap-4"
     >
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className={labelClass}>Name</label>
-          <input required value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
-        </div>
-        <div>
-          <label className={labelClass}>Color</label>
-          <input required value={color} onChange={(e) => setColor(e.target.value)} className={inputClass} />
-        </div>
-      </div>
-
-      <div>
-        <label className={labelClass}>Description</label>
-        <textarea
-          value={description ?? ""}
-          onChange={(e) => setDescription(e.target.value)}
-          rows={3}
-          className={inputClass}
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className={labelClass}>Category</label>
-          <select required value={category} onChange={(e) => setCategory(e.target.value)} className={inputClass}>
-            <option value="" disabled>
-              Select a subcategory…
-            </option>
-            {assignableCategories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
+      <Panel title="Details">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Name" htmlFor="product-name">
+            <input id="product-name" required value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
+          </Field>
+          <Field label="Color" htmlFor="product-color">
+            <input id="product-color" required value={color} onChange={(e) => setColor(e.target.value)} className={inputClass} />
+          </Field>
+          <Field label="Description" htmlFor="product-description" className="sm:col-span-2">
+            <textarea
+              id="product-description"
+              value={description ?? ""}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={3}
+              className={inputClass}
+            />
+          </Field>
+          <Field label="Section" htmlFor="product-category">
+            <select
+              id="product-category"
+              required
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className={inputClass}
+            >
+              <option value="" disabled>
+                Select a subcategory…
               </option>
-            ))}
-          </select>
+              {assignableCategories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field
+            label="Style group (optional)"
+            htmlFor="product-style-group"
+            hint="Shared key linking colorways of the same style."
+          >
+            <input
+              id="product-style-group"
+              value={styleGroup ?? ""}
+              onChange={(e) => setStyleGroup(e.target.value)}
+              placeholder="e.g. knitted-polo-t-shirt"
+              className={inputClass}
+            />
+          </Field>
         </div>
-        <div>
-          <label className={labelClass}>Style Group (optional)</label>
-          <input
-            value={styleGroup ?? ""}
-            onChange={(e) => setStyleGroup(e.target.value)}
-            placeholder="e.g. knitted-polo-t-shirt"
-            className={inputClass}
-          />
-          <p className="mt-1 text-[11px] text-muted-foreground">Shared key linking colorways of the same style.</p>
-        </div>
-      </div>
+      </Panel>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className={labelClass}>Price (EGP)</label>
-          <input
-            required
-            type="number"
-            min="0"
-            step="0.01"
-            value={priceMajor}
-            onChange={(e) => setPriceMajor(e.target.value)}
-            className={inputClass}
-          />
+      <Panel title="Price">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Price (EGP)" htmlFor="product-price">
+            <input
+              id="product-price"
+              required
+              type="number"
+              inputMode="decimal"
+              min="0"
+              step="0.01"
+              value={priceMajor}
+              onChange={(e) => setPriceMajor(e.target.value)}
+              className={inputClass}
+            />
+          </Field>
+          <Field label="Discount price (EGP, optional)" htmlFor="product-discount">
+            <input
+              id="product-discount"
+              type="number"
+              inputMode="decimal"
+              min="0"
+              step="0.01"
+              value={discountPriceMajor}
+              onChange={(e) => setDiscountPriceMajor(e.target.value)}
+              className={inputClass}
+            />
+          </Field>
         </div>
-        <div>
-          <label className={labelClass}>Discount Price (EGP, optional)</label>
-          <input
-            type="number"
-            min="0"
-            step="0.01"
-            value={discountPriceMajor}
-            onChange={(e) => setDiscountPriceMajor(e.target.value)}
-            className={inputClass}
-          />
-        </div>
-      </div>
+      </Panel>
 
-      <div>
-        <label className={labelClass}>Images (URLs)</label>
-        <div className="space-y-2">
+      <Panel title="Photos">
+        <div className="grid gap-2">
           {images.map((url, i) => (
             <div key={i} className="flex gap-2">
               <input
                 value={url}
                 onChange={(e) => setImages((prev) => prev.map((u, idx) => (idx === i ? e.target.value : u)))}
                 placeholder="https://…"
+                aria-label="Image URL"
                 className={inputClass}
               />
               <button
                 type="button"
                 onClick={() => setImages((prev) => prev.filter((_, idx) => idx !== i))}
                 disabled={images.length === 1}
-                className="shrink-0 border border-border px-3 text-muted-foreground transition-colors hover:text-destructive disabled:opacity-30"
+                className="grid size-12 shrink-0 place-items-center rounded-xl border border-border text-muted-foreground transition-colors hover:text-danger-strong disabled:opacity-30"
                 aria-label="Remove image"
               >
-                <Trash2 className="size-4" strokeWidth={1.5} />
+                <Trash2 className="size-4" strokeWidth={2} />
               </button>
             </div>
           ))}
@@ -192,21 +198,21 @@ export function ProductForm({ product }: { product?: Product }) {
         <button
           type="button"
           onClick={() => setImages((prev) => [...prev, ""])}
-          className="mt-2 flex items-center gap-1.5 text-[12px] text-muted-foreground underline hover:text-foreground"
+          className="action-secondary mt-3 min-h-11 rounded-xl px-4"
         >
-          <Plus className="size-3.5" strokeWidth={2} />
+          <Plus className="size-4" strokeWidth={2} />
           Add image URL
         </button>
-      </div>
+      </Panel>
 
-      <div>
-        <label className={labelClass}>Stock by Size</label>
-        <div className="grid grid-cols-5 gap-3">
+      <Panel title="Stock by size">
+        <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
           {ALL_SIZES.map((size) => (
-            <div key={size}>
-              <label className="mb-1 block text-center text-[11px] text-muted-foreground">{size}</label>
+            <Field key={size} label={size} htmlFor={`stock-${size}`}>
               <input
+                id={`stock-${size}`}
                 type="number"
+                inputMode="numeric"
                 min="0"
                 value={sizes[size]}
                 onChange={(e) =>
@@ -214,38 +220,35 @@ export function ProductForm({ product }: { product?: Product }) {
                 }
                 className={`${inputClass} text-center`}
               />
-            </div>
+            </Field>
           ))}
         </div>
-      </div>
+      </Panel>
 
-      <div className="flex flex-wrap gap-6">
-        <label className="flex items-center gap-2 text-[13px] text-foreground">
-          <input type="checkbox" checked={isBestSeller} onChange={(e) => setIsBestSeller(e.target.checked)} />
-          Best seller
-        </label>
-        {isEdit && (
-          <label className="flex items-center gap-2 text-[13px] text-foreground">
-            <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
-            Active (visible in storefront)
-          </label>
-        )}
-      </div>
+      <Panel title="Visibility">
+        <div className="grid gap-2 sm:grid-cols-2">
+          <CheckboxField checked={isBestSeller} onChange={setIsBestSeller} label="Best seller" />
+          {isEdit && (
+            <CheckboxField
+              checked={isActive}
+              onChange={setIsActive}
+              label="Shown on the menu"
+              hint="Untick to hide this dish from customers."
+            />
+          )}
+        </div>
+      </Panel>
 
-      <div className="flex gap-3 pt-2">
-        <button
-          type="submit"
-          disabled={mutation.isPending}
-          className="bg-primary px-8 py-3 text-button font-medium tracking-[0.05em] text-primary-foreground uppercase transition-colors hover:bg-primary/90 disabled:opacity-50"
-        >
-          {mutation.isPending ? "Saving…" : isEdit ? "Save Changes" : "Create Product"}
-        </button>
+      <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row">
         <button
           type="button"
           onClick={() => router.push("/admin/products")}
-          className="border border-border px-8 py-3 text-button font-medium tracking-[0.05em] text-foreground uppercase transition-colors hover:bg-muted"
+          className="action-secondary min-h-12 rounded-xl px-8"
         >
           Cancel
+        </button>
+        <button type="submit" disabled={mutation.isPending} className="action-primary min-h-12 rounded-xl px-8">
+          {mutation.isPending ? "Saving…" : isEdit ? "Save changes" : "Create dish"}
         </button>
       </div>
     </form>

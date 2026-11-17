@@ -27,7 +27,7 @@ const FAQS: { question: string; answer: React.ReactNode }[] = [
       <>
         Yes, while the restaurant has not started preparing it — open the order in{" "}
         <Link href="/account/orders" className="text-foreground underline">
-          Order History
+          Order history
         </Link>{" "}
         and select Cancel. If preparation has already started, contact the restaurant directly through our{" "}
         <Link href="/contact" className="text-foreground underline">
@@ -43,7 +43,7 @@ const FAQS: { question: string; answer: React.ReactNode }[] = [
       <>
         Use your order number and email on the tracking page, or open the order in{" "}
         <Link href="/account/orders" className="text-foreground underline">
-          Order History
+          Order history
         </Link>
         .
       </>
@@ -73,26 +73,26 @@ const FAQS: { question: string; answer: React.ReactNode }[] = [
 
 export default function FaqPage() {
   return (
-    <div className="page-shell py-stack-xl">
+    <div className="page-shell">
       <div className="mx-auto max-w-2xl">
         <p className="eyebrow">Help centre</p>
-        <h1 className="mt-2 mb-10 font-heading text-headline-sm font-bold text-foreground md:text-headline-md">
-          Frequently Asked Questions
+        <h1 className="mt-2 mb-10 font-heading text-3xl sm:text-4xl text-foreground">
+          Frequently asked questions
         </h1>
 
         <div className="grid gap-3">
           {FAQS.map((faq) => (
             <details key={faq.question} className="surface group px-5 py-4 sm:px-6">
-              <summary className="flex min-h-8 cursor-pointer list-none items-center justify-between gap-4 text-[14px] font-bold text-foreground marker:content-none">
+              <summary className="flex min-h-8 cursor-pointer list-none items-center justify-between gap-4 text-base font-bold text-foreground marker:content-none">
                 {faq.question}
                 <span className="shrink-0 text-muted-foreground transition-transform group-open:rotate-45">+</span>
               </summary>
-              <p className="mt-3 text-[13px] leading-relaxed text-muted-foreground">{faq.answer}</p>
+              <p className="mt-3 text-sm leading-7 text-muted-foreground">{faq.answer}</p>
             </details>
           ))}
         </div>
 
-        <p className="mt-10 text-[13px] text-muted-foreground">
+        <p className="mt-10 text-sm text-muted-foreground">
           Still have a question?{" "}
           <Link href="/contact" className="text-foreground underline">
             Get in touch

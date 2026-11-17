@@ -371,7 +371,7 @@ export default function CheckoutPage() {
           form the customer has to scroll back to. */}
       {!session && (
         <div className="safe-bottom fixed inset-x-0 bottom-0 z-30 border-t border-border bg-background/95 p-3 backdrop-blur-md lg:hidden">
-          {!canPlaceOrder && <p className="mb-2 text-center text-[11px] leading-5 text-muted-foreground"><T>{guidance}</T></p>}
+          {!canPlaceOrder && <p className="mb-2 text-center text-xs leading-5 text-muted-foreground"><T>{guidance}</T></p>}
           <button
             type="button"
             onClick={() => placeOrderMutation.mutate()}

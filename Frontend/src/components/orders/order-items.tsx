@@ -28,13 +28,13 @@ export function OrderItems({ items }: { items: OrderItem[] }) {
 
         return (
           <li key={`${item.product}-${item.variant?.id ?? ""}-${index}`} className="flex gap-4 py-4 first:pt-0 last:pb-0">
-            <div className="relative size-16 shrink-0 overflow-hidden rounded-[1.1rem] bg-muted sm:size-20">
+            <div className="relative size-16 shrink-0 overflow-hidden rounded-xl bg-muted sm:size-20">
               {item.image && (
                 <Image src={item.image} alt={item.name} fill className="object-cover" sizes="80px" />
               )}
               {/* The count rides on the image so the eye picks up "2 of these"
                   in the same glance as the dish itself. */}
-              <span className="absolute right-0 bottom-0 grid min-w-6 place-items-center rounded-tl-lg bg-foreground px-1.5 py-0.5 text-[11px] font-black text-background">
+              <span className="absolute right-0 bottom-0 grid min-w-6 place-items-center rounded-tl-lg bg-foreground px-1.5 py-0.5 text-xs font-black text-background">
                 {item.quantity}
               </span>
             </div>
@@ -52,7 +52,7 @@ export function OrderItems({ items }: { items: OrderItem[] }) {
                   {choices.map((choice) => (
                     <li
                       key={choice}
-                      className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-bold text-muted-foreground"
+                      className="rounded-full bg-muted px-2.5 py-1 text-xs font-bold text-muted-foreground"
                     >
                       {choice}
                     </li>

@@ -8,10 +8,8 @@ import { createCoupon, updateCoupon } from "@/lib/api/coupons";
 import type { Coupon, CreateCouponInput } from "@/types/coupon";
 import type { CouponType } from "@/lib/api/coupons";
 import { errorMessage } from "@/lib/api/error-message";
-
-const inputClass =
-  "w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-foreground";
-const labelClass = "mb-1.5 block text-[11px] font-semibold tracking-[0.1em] text-foreground uppercase";
+import { Panel } from "@/components/admin/ui/panel";
+import { CheckboxField, Field, inputClass } from "@/components/admin/ui/field";
 
 function toDateInputValue(iso: string | null): string {
   if (!iso) return "";
@@ -64,117 +62,136 @@ export function CouponForm({ coupon }: { coupon?: Coupon }) {
         e.preventDefault();
         mutation.mutate();
       }}
-      className="max-w-xl space-y-5"
+      className="grid max-w-2xl gap-4"
     >
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className={labelClass}>Code</label>
-          <input
-            required
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            className={`${inputClass} uppercase`}
-          />
-        </div>
-        <div>
-          <label className={labelClass}>Type</label>
-          <select value={type} onChange={(e) => setType(e.target.value as CouponType)} className={inputClass}>
-            <option value="percentage">Percentage</option>
-            <option value="fixed">Fixed amount</option>
-            <option value="free_shipping">Free shipping</option>
-          </select>
-        </div>
-      </div>
-
-      {type !== "free_shipping" && (
-        <div>
-          <label className={labelClass}>
-            {type === "percentage" ? "Percentage off (1–100)" : "Amount off (EGP)"}
-          </label>
-          <input
-            required
-            type="number"
-            min={type === "percentage" ? 1 : 0.01}
-            max={type === "percentage" ? 100 : undefined}
-            step={type === "percentage" ? 1 : 0.01}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            className={inputClass}
-          />
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className={labelClass}>Minimum Subtotal (EGP)</label>
-          <input type="number" min="0" step="0.01" value={minSubtotal} onChange={(e) => setMinSubtotal(e.target.value)} className={inputClass} />
-        </div>
-        {type === "percentage" && (
-          <div>
-            <label className={labelClass}>Max Discount Cap (EGP, optional)</label>
+      <Panel title="Discount">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Code" htmlFor="coupon-code">
             <input
+              id="coupon-code"
+              required
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              className={`${inputClass} uppercase`}
+            />
+          </Field>
+          <Field label="Type" htmlFor="coupon-type">
+            <select
+              id="coupon-type"
+              value={type}
+              onChange={(e) => setType(e.target.value as CouponType)}
+              className={inputClass}
+            >
+              <option value="percentage">Percentage</option>
+              <option value="fixed">Fixed amount</option>
+              <option value="free_shipping">Free delivery</option>
+            </select>
+          </Field>
+          {type !== "free_shipping" && (
+            <Field
+              label={type === "percentage" ? "Percentage off (1–100)" : "Amount off (EGP)"}
+              htmlFor="coupon-value"
+            >
+              <input
+                id="coupon-value"
+                required
+                type="number"
+                inputMode="decimal"
+                min={type === "percentage" ? 1 : 0.01}
+                max={type === "percentage" ? 100 : undefined}
+                step={type === "percentage" ? 1 : 0.01}
+                value={value}
+                onChange={(e) => setValue(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          )}
+          {type === "percentage" && (
+            <Field label="Max discount (EGP, optional)" htmlFor="coupon-cap">
+              <input
+                id="coupon-cap"
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="0.01"
+                value={maxDiscountCap}
+                onChange={(e) => setMaxDiscountCap(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          )}
+        </div>
+      </Panel>
+
+      <Panel title="Rules">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Minimum order (EGP)" htmlFor="coupon-min">
+            <input
+              id="coupon-min"
               type="number"
+              inputMode="decimal"
               min="0"
               step="0.01"
-              value={maxDiscountCap}
-              onChange={(e) => setMaxDiscountCap(e.target.value)}
+              value={minSubtotal}
+              onChange={(e) => setMinSubtotal(e.target.value)}
               className={inputClass}
             />
-          </div>
-        )}
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className={labelClass}>Starts (optional)</label>
-          <input type="date" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} className={inputClass} />
+          </Field>
+          <Field
+            label="Total uses (optional)"
+            htmlFor="coupon-limit"
+            hint="Each customer may use a coupon once, whatever this limit."
+          >
+            <input
+              id="coupon-limit"
+              type="number"
+              inputMode="numeric"
+              min="1"
+              value={usageLimit}
+              onChange={(e) => setUsageLimit(e.target.value)}
+              placeholder="Unlimited"
+              className={inputClass}
+            />
+          </Field>
+          <Field label="Starts (optional)" htmlFor="coupon-starts">
+            <input
+              id="coupon-starts"
+              type="date"
+              value={startsAt}
+              onChange={(e) => setStartsAt(e.target.value)}
+              className={inputClass}
+            />
+          </Field>
+          <Field label="Ends (optional)" htmlFor="coupon-ends">
+            <input
+              id="coupon-ends"
+              type="date"
+              value={endsAt}
+              onChange={(e) => setEndsAt(e.target.value)}
+              className={inputClass}
+            />
+          </Field>
         </div>
-        <div>
-          <label className={labelClass}>Ends (optional)</label>
-          <input type="date" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} className={inputClass} />
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          <CheckboxField
+            checked={excludeSaleItems}
+            onChange={setExcludeSaleItems}
+            label="Exclude discounted dishes"
+          />
+          {isEdit && <CheckboxField checked={isActive} onChange={setIsActive} label="Active" />}
         </div>
-      </div>
+      </Panel>
 
-      <div>
-        <label className={labelClass}>Total Usage Limit (optional)</label>
-        <input
-          type="number"
-          min="1"
-          value={usageLimit}
-          onChange={(e) => setUsageLimit(e.target.value)}
-          placeholder="Unlimited"
-          className={inputClass}
-        />
-        <p className="mt-1 text-[11px] text-muted-foreground">Each customer may redeem a coupon once, regardless of this limit.</p>
-      </div>
-
-      <div className="flex flex-wrap gap-6">
-        <label className="flex items-center gap-2 text-[13px] text-foreground">
-          <input type="checkbox" checked={excludeSaleItems} onChange={(e) => setExcludeSaleItems(e.target.checked)} />
-          Exclude sale items
-        </label>
-        {isEdit && (
-          <label className="flex items-center gap-2 text-[13px] text-foreground">
-            <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
-            Active
-          </label>
-        )}
-      </div>
-
-      <div className="flex gap-3 pt-2">
-        <button
-          type="submit"
-          disabled={mutation.isPending}
-          className="bg-primary px-8 py-3 text-button font-medium tracking-[0.05em] text-primary-foreground uppercase transition-colors hover:bg-primary/90 disabled:opacity-50"
-        >
-          {mutation.isPending ? "Saving…" : isEdit ? "Save Changes" : "Create Coupon"}
-        </button>
+      <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row">
         <button
           type="button"
           onClick={() => router.push("/admin/coupons")}
-          className="border border-border px-8 py-3 text-button font-medium tracking-[0.05em] text-foreground uppercase transition-colors hover:bg-muted"
+          className="action-secondary min-h-12 rounded-xl px-8"
         >
           Cancel
+        </button>
+        <button type="submit" disabled={mutation.isPending} className="action-primary min-h-12 rounded-xl px-8">
+          {mutation.isPending ? "Saving…" : isEdit ? "Save changes" : "Create coupon"}
         </button>
       </div>
     </form>

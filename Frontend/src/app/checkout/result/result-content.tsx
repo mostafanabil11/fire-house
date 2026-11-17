@@ -28,35 +28,35 @@ export function CheckoutResultContent() {
 
   if (status === "success") {
     return (
-      <div className="mx-auto flex w-full max-w-(--spacing-container-max) flex-col items-center px-margin-mobile py-stack-xl text-center md:px-margin-desktop">
+      <div className="page-shell flex flex-col items-center text-center">
         <Loader2 className="mb-4 size-8 animate-spin text-muted-foreground" strokeWidth={1.5} />
-        <p className="text-body-md text-muted-foreground">Confirming your payment…</p>
+        <p className="text-base text-muted-foreground">Confirming your payment…</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-(--spacing-container-max) flex-col items-center px-margin-mobile py-stack-xl text-center md:px-margin-desktop">
+    <div className="page-shell flex flex-col items-center text-center">
       <XCircle className="mb-4 size-12 text-destructive" strokeWidth={1} />
-      <h1 className="mb-3 font-heading text-headline-md font-bold text-foreground">Payment Not Completed</h1>
-      <p className="mb-2 max-w-md text-body-md text-muted-foreground">
+      <h1 className="mb-3 font-heading text-3xl sm:text-4xl text-foreground">Payment not completed</h1>
+      <p className="mb-2 max-w-md text-base text-muted-foreground">
         Your payment wasn&apos;t completed, so we haven&apos;t charged you and your order hasn&apos;t been placed.
       </p>
-      <p className="mb-8 max-w-md text-[13px] text-muted-foreground">
+      <p className="mb-8 max-w-md text-sm text-muted-foreground">
         Your bag is still saved — you can try again with the same card or choose cash on delivery.
       </p>
       <div className="flex flex-col gap-3 sm:flex-row">
         <Link
           href="/checkout"
-          className="bg-primary px-8 py-4 text-button font-medium tracking-[0.05em] text-primary-foreground uppercase transition-colors hover:bg-primary/90"
+          className="action-primary"
         >
-          Try Again
+          Try again
         </Link>
         <Link
           href="/cart"
-          className="border border-border px-8 py-4 text-button font-medium tracking-[0.05em] text-foreground uppercase transition-colors hover:bg-muted"
+          className="action-secondary"
         >
-          Back to Bag
+          Back to your order
         </Link>
       </div>
     </div>

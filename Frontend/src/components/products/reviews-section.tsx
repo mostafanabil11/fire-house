@@ -62,28 +62,28 @@ export function ReviewsSection({ productId, averageRating, reviewCount }: { prod
     "w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-foreground";
 
   return (
-    <section className="mx-auto w-full max-w-(--spacing-container-max) border-t border-border px-margin-mobile py-stack-lg md:px-margin-desktop">
+    <section className="mx-auto w-full max-w-7xl border-t border-border px-4 py-12 sm:px-6">
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="mb-2 font-heading text-headline-sm font-bold text-foreground">Reviews</h2>
+          <h2 className="mb-2 font-heading text-xl text-foreground">Reviews</h2>
           {reviewCount > 0 ? (
             <div className="flex items-center gap-2">
               <StarRating value={averageRating} />
-              <span className="text-[13px] text-muted-foreground">
+              <span className="text-sm text-muted-foreground">
                 {averageRating.toFixed(1)} out of 5 ({reviewCount} review{reviewCount === 1 ? "" : "s"})
               </span>
             </div>
           ) : (
-            <p className="text-[13px] text-muted-foreground">No reviews yet</p>
+            <p className="text-sm text-muted-foreground">No reviews yet</p>
           )}
         </div>
         {user && !showForm && (
           <button
             type="button"
             onClick={() => setShowForm(true)}
-            className="border border-foreground px-6 py-2.5 text-[12px] font-medium tracking-[0.05em] text-foreground uppercase hover:bg-foreground hover:text-background"
+            className="action-secondary"
           >
-            Write a Review
+            Write a review
           </button>
         )}
       </div>
@@ -96,23 +96,23 @@ export function ReviewsSection({ productId, averageRating, reviewCount }: { prod
           }}
           className="mb-10 max-w-lg border border-border p-6"
         >
-          <p className="mb-4 text-[12px] text-muted-foreground">
+          <p className="mb-4 text-xs text-muted-foreground">
             Only customers who purchased this product can leave a review.
           </p>
           <div className="mb-4">
-            <label className="mb-2 block text-[11px] font-semibold tracking-[0.1em] text-foreground uppercase">
+            <label className="mb-2 block text-xs font-semibold tracking-[0.1em] text-foreground uppercase">
               Rating
             </label>
             <StarInput value={rating} onChange={setRating} />
           </div>
           <div className="mb-4">
-            <label className="mb-2 block text-[11px] font-semibold tracking-[0.1em] text-foreground uppercase">
+            <label className="mb-2 block text-xs font-semibold tracking-[0.1em] text-foreground uppercase">
               Title
             </label>
             <input required value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} maxLength={120} />
           </div>
           <div className="mb-4">
-            <label className="mb-2 block text-[11px] font-semibold tracking-[0.1em] text-foreground uppercase">
+            <label className="mb-2 block text-xs font-semibold tracking-[0.1em] text-foreground uppercase">
               Review
             </label>
             <textarea required value={body} onChange={(e) => setBody(e.target.value)} rows={4} className={inputClass} maxLength={2000} />
@@ -121,14 +121,14 @@ export function ReviewsSection({ productId, averageRating, reviewCount }: { prod
             <button
               type="submit"
               disabled={mutation.isPending}
-              className="bg-primary px-6 py-2.5 text-[12px] font-medium tracking-[0.05em] text-primary-foreground uppercase hover:bg-primary/90 disabled:opacity-50"
+              className="action-primary disabled:opacity-50"
             >
-              {mutation.isPending ? "Submitting…" : "Submit Review"}
+              {mutation.isPending ? "Submitting…" : "Submit review"}
             </button>
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="border border-border px-6 py-2.5 text-[12px] uppercase hover:bg-muted"
+              className="border border-border px-6 py-2.5 text-xs uppercase hover:bg-muted"
             >
               Cancel
             </button>
@@ -139,21 +139,21 @@ export function ReviewsSection({ productId, averageRating, reviewCount }: { prod
       {isLoading ? (
         <div className="h-32 max-w-2xl animate-pulse bg-muted" />
       ) : !reviews || reviews.length === 0 ? (
-        <p className="text-[13px] text-muted-foreground">Be the first to review this product.</p>
+        <p className="text-sm text-muted-foreground">Be the first to review this product.</p>
       ) : (
         <div className="max-w-2xl divide-y divide-border border-t border-b border-border">
           {reviews.map((review) => (
             <div key={review._id} className="py-5">
               <div className="mb-2 flex items-center justify-between gap-4">
                 <StarRating value={review.rating} />
-                <span className="text-[12px] text-muted-foreground">
+                <span className="text-xs text-muted-foreground">
                   {new Date(review.createdAt).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
                 </span>
               </div>
-              <p className="mb-1 text-[14px] font-medium text-foreground">{review.title}</p>
-              <p className="mb-2 text-[13px] text-muted-foreground">{review.body}</p>
+              <p className="mb-1 text-base font-medium text-foreground">{review.title}</p>
+              <p className="mb-2 text-sm text-muted-foreground">{review.body}</p>
               {review.user && (
-                <p className="text-[12px] text-muted-foreground">— {review.user.firstName} {review.user.lastName.charAt(0)}.</p>
+                <p className="text-xs text-muted-foreground">— {review.user.firstName} {review.user.lastName.charAt(0)}.</p>
               )}
             </div>
           ))}

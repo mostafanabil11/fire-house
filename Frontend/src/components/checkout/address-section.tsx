@@ -123,7 +123,7 @@ export function AddressSection({
                       {address.firstName} {address.lastName}
                     </span>
                     {address.isDefault && (
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-[0.65rem] font-black tracking-wide text-muted-foreground uppercase">
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-black tracking-wide text-muted-foreground uppercase">
                         Default
                       </span>
                     )}

@@ -1,19 +1,20 @@
+import { StatusPill, type StatusTone } from "@/components/admin/ui/status-pill";
 import type { FulfillmentStatus, PaymentStatus } from "@/types/order";
 
-const FULFILLMENT_LABEL: Record<FulfillmentStatus, string> = {
-  unfulfilled: "Waiting",
-  processing: "Waiting",
-  confirmed: "Confirmed",
-  shipped: "Shipped",
-  delivered: "Delivered",
-  cancelled: "Cancelled",
+const FULFILLMENT: Record<FulfillmentStatus, { label: string; tone: StatusTone }> = {
+  unfulfilled: { label: "Waiting", tone: "neutral" },
+  processing: { label: "Waiting", tone: "neutral" },
+  confirmed: { label: "Confirmed", tone: "success" },
+  shipped: { label: "Shipped", tone: "success" },
+  delivered: { label: "Delivered", tone: "success" },
+  cancelled: { label: "Cancelled", tone: "danger" },
 };
 
-const PAYMENT_LABEL: Record<PaymentStatus, string> = {
-  pending: "Payment Pending",
-  paid: "Paid",
-  failed: "Payment Failed",
-  refunded: "Refunded",
+const PAYMENT: Record<PaymentStatus, { label: string; tone: StatusTone }> = {
+  pending: { label: "Payment pending", tone: "neutral" },
+  paid: { label: "Paid", tone: "success" },
+  failed: { label: "Payment failed", tone: "danger" },
+  refunded: { label: "Refunded", tone: "neutral" },
 };
 
 export function OrderStatusBadge({
@@ -23,20 +24,13 @@ export function OrderStatusBadge({
   fulfillmentStatus: FulfillmentStatus;
   paymentStatus: PaymentStatus;
 }) {
-  const isNegative = fulfillmentStatus === "cancelled" || paymentStatus === "failed";
+  const fulfillment = FULFILLMENT[fulfillmentStatus];
+  const payment = PAYMENT[paymentStatus];
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span
-        className={`border px-2.5 py-1 text-[11px] font-semibold tracking-[0.05em] uppercase ${
-          isNegative ? "border-destructive text-destructive" : "border-border text-foreground"
-        }`}
-      >
-        {FULFILLMENT_LABEL[fulfillmentStatus]}
-      </span>
-      <span className="text-[11px] font-medium tracking-[0.05em] text-muted-foreground uppercase">
-        {PAYMENT_LABEL[paymentStatus]}
-      </span>
+      <StatusPill tone={fulfillment.tone}>{fulfillment.label}</StatusPill>
+      <StatusPill tone={payment.tone}>{payment.label}</StatusPill>
     </div>
   );
 }

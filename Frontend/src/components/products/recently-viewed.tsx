@@ -13,8 +13,8 @@ export function RecentlyViewed({ excludeId }: { excludeId?: string }) {
   if (items.length === 0) return null;
 
   return (
-    <section className="mx-auto w-full max-w-(--spacing-container-max) border-t border-border px-margin-mobile py-stack-lg md:px-margin-desktop">
-      <h2 className="mb-8 font-heading text-headline-sm font-bold text-foreground">Recently Viewed</h2>
+    <section className="mx-auto w-full max-w-7xl border-t border-border px-4 py-12 sm:px-6">
+      <h2 className="mb-8 font-heading text-xl text-foreground">Recently viewed</h2>
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
         {items.map((item) => (
           <Link key={item._id} href={`/menu/${item.slug}`} className="group">
@@ -30,8 +30,8 @@ export function RecentlyViewed({ excludeId }: { excludeId?: string }) {
                 />
               )}
             </div>
-            <p className="text-[13px] text-foreground">{item.name}</p>
-            <p className="text-[13px] text-muted-foreground">{formatPrice(item.discountPrice ?? item.price)}</p>
+            <p className="text-sm text-foreground">{item.name}</p>
+            <p className="text-sm text-muted-foreground">{formatPrice(item.discountPrice ?? item.price)}</p>
           </Link>
         ))}
       </div>

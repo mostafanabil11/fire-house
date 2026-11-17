@@ -14,19 +14,19 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="mx-auto flex w-full max-w-(--spacing-container-max) flex-col items-center px-margin-mobile py-stack-xl text-center md:px-margin-desktop">
-      <h1 className="mb-4 font-heading text-headline-md font-bold text-foreground">
-        Something Went Wrong
+    <div className="page-shell flex flex-col items-center text-center">
+      <h1 className="mb-4 font-heading text-3xl sm:text-4xl text-foreground">
+        Something went wrong
       </h1>
-      <p className="mb-8 text-body-md text-muted-foreground">
+      <p className="mb-8 text-base text-muted-foreground">
         We hit an unexpected error. Please try again.
       </p>
       <button
         type="button"
         onClick={reset}
-        className="bg-primary px-8 py-4 text-button font-medium tracking-[0.05em] text-primary-foreground uppercase transition-colors hover:bg-primary/90"
+        className="action-primary"
       >
-        Try Again
+        Try again
       </button>
     </div>
   );

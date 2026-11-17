@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Search, Users } from "lucide-react";
 import { getCustomers } from "@/lib/api/admin";
+import { AdminPageHeader } from "@/components/admin/ui/page-header";
+import { StatusPill } from "@/components/admin/ui/status-pill";
+import { EmptyState } from "@/components/admin/ui/empty-state";
+import { Pagination } from "@/components/admin/ui/pagination";
 
 export default function AdminCustomersPage() {
   const [page, setPage] = useState(1);
@@ -14,70 +19,56 @@ export default function AdminCustomersPage() {
   });
 
   return (
-    <div>
-      <h1 className="mb-8 font-heading text-headline-sm font-bold text-foreground">Customers</h1>
-
-      <input
-        value={q}
-        onChange={(e) => {
-          setQ(e.target.value);
-          setPage(1);
-        }}
-        placeholder="Search by name or email…"
-        className="mb-6 w-full max-w-sm border border-border bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:border-foreground"
+    <div className="grid gap-5">
+      <AdminPageHeader
+        title="Customers"
+        description="People with an account. Guests who ordered without one are on their orders."
       />
 
+      <label className="flex min-h-12 items-center gap-2 rounded-2xl border border-border bg-card px-4 sm:max-w-md">
+        <Search className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+        <input
+          value={q}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setPage(1);
+          }}
+          placeholder="Search by name or email…"
+          aria-label="Search customers"
+          className="min-h-11 w-full min-w-0 bg-transparent text-base outline-none"
+        />
+      </label>
+
       {isLoading || !data ? (
-        <div className="h-64 animate-pulse bg-muted" />
+        <div className="h-64 animate-pulse rounded-2xl bg-muted" />
       ) : data.items.length === 0 ? (
-        <p className="text-[13px] text-muted-foreground">No customers found.</p>
+        <EmptyState icon={<Users aria-hidden />} title="No customers found." />
       ) : (
         <>
-          <div className="divide-y divide-border border-t border-b border-border">
+          <ul className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
             {data.items.map((customer) => (
-              <div key={customer._id} className="flex items-center justify-between gap-4 py-3 text-[13px]">
-                <div>
-                  <p className="font-medium text-foreground">
+              <li
+                key={customer._id}
+                className="flex min-h-16 flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:px-5"
+              >
+                <div className="min-w-0">
+                  <p className="text-base font-bold" data-i18n-ignore>
                     {customer.firstName} {customer.lastName}
-                    {customer.role === "admin" && (
-                      <span className="ml-2 border border-foreground px-1.5 py-0.5 text-[10px] font-semibold tracking-[0.05em] uppercase">
-                        Admin
-                      </span>
-                    )}
                   </p>
-                  <p className="text-muted-foreground">{customer.email}</p>
+                  <p className="text-sm break-all text-muted-foreground" data-i18n-ignore>
+                    {customer.email}
+                  </p>
                 </div>
-                <div className="text-right text-[12px] text-muted-foreground">
-                  <p>{customer.authProvider === "google" ? "Google" : "Email/Password"}</p>
-                  <p>{customer.isEmailVerified ? "Verified" : "Unverified"}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {customer.role === "admin" && <StatusPill tone="danger-solid" className="bg-foreground">Admin</StatusPill>}
+                  <StatusPill>{customer.authProvider === "google" ? "Google" : "Email"}</StatusPill>
+                  {!customer.isEmailVerified && <StatusPill tone="warning">Unverified</StatusPill>}
                 </div>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
 
-          {data.pagination.pages > 1 && (
-            <div className="mt-6 flex items-center justify-center gap-4 text-[13px]">
-              <button
-                type="button"
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="text-muted-foreground underline disabled:opacity-30"
-              >
-                Previous
-              </button>
-              <span className="text-muted-foreground">
-                Page {data.pagination.page} of {data.pagination.pages}
-              </span>
-              <button
-                type="button"
-                onClick={() => setPage((p) => Math.min(data.pagination.pages, p + 1))}
-                disabled={page === data.pagination.pages}
-                className="text-muted-foreground underline disabled:opacity-30"
-              >
-                Next
-              </button>
-            </div>
-          )}
+          <Pagination page={data.pagination.page} pages={data.pagination.pages} onChange={setPage} />
         </>
       )}
     </div>

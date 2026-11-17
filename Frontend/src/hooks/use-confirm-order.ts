@@ -3,38 +3,35 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { updateOrderStatus } from "@/lib/api/orders";
-import { confirmWarning } from "@/lib/staff-orders";
-import type { Order } from "@/types/order";
+import { useLanguage } from "@/i18n/language-provider";
 
 /**
- * The staff "Confirm order" action, shared by the board card and the order
- * page. Asks first only when confirming would also mark a transfer paid.
+ * The staff "Confirm order" mutation. Asking first (an InstaPay transfer has
+ * to be checked in the bank app) is ConfirmOrderButton's job, so the board
+ * and the order page ask the same question the same way.
  */
 export function useConfirmOrder() {
   const queryClient = useQueryClient();
+  const { t } = useLanguage();
 
   const mutation = useMutation({
     mutationFn: (orderNumber: string) =>
       updateOrderStatus(orderNumber, { fulfillmentStatus: "confirmed" }),
     onSuccess: (order) => {
-      toast.success(`${order.orderNumber} confirmed`);
-      // Covers the board, the order page and the dashboard's waiting list.
+      toast.success(t(`${order.orderNumber} confirmed`));
+      // Covers the board, the order page, the overview and the nav badge.
       queryClient.invalidateQueries({ queryKey: ["admin"] });
     },
     onError: (err: unknown) => {
       const message = (err as { response?: { data?: { message?: string } } })?.response?.data
         ?.message;
-      toast.error(message ?? "Could not confirm order");
+      toast.error(t(message ?? "Could not confirm order"));
     },
   });
 
-  function confirmOrder(
-    order: Pick<Order, "orderNumber" | "paymentMethod" | "paymentStatus" | "fulfillmentStatus">,
-  ) {
-    const warning = confirmWarning(order);
-    if (warning && !window.confirm(warning)) return;
-    mutation.mutate(order.orderNumber);
-  }
-
-  return { confirmOrder, isPending: mutation.isPending };
+  return {
+    confirmOrder: (orderNumber: string, options?: { onSuccess?: () => void }) =>
+      mutation.mutate(orderNumber, { onSuccess: options?.onSuccess }),
+    isPending: mutation.isPending,
+  };
 }

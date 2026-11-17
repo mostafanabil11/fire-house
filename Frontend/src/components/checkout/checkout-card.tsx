@@ -18,7 +18,7 @@ export function CheckoutCard({
   className?: string;
 }) {
   return (
-    <section className={`rounded-[1.5rem] border border-border bg-card p-5 sm:p-6 ${className}`}>
+    <section className={`rounded-2xl border border-border bg-card p-5 sm:p-6 ${className}`}>
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="flex items-center gap-2.5 font-heading text-lg font-black tracking-tight">
           {icon && <span className="text-primary">{icon}</span>}

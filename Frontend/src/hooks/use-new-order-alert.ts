@@ -2,21 +2,51 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLanguage } from "@/i18n/language-provider";
+import { canConfirm } from "@/lib/staff-orders";
+import type { Order } from "@/types/order";
 
 const SEEN_KEY = "firehouse-admin-seen-orders";
+const SOUND_KEY = "firehouse-admin-sound";
 
-// A short two-tone chime, synthesised rather than fetched: no asset to ship,
-// no request to fail, and it works the moment the page loads.
-function playChime() {
+export type AlertableOrder = Pick<
+  Order,
+  "orderNumber" | "fulfillmentStatus" | "paymentStatus" | "paymentMethod"
+>;
+
+// One audio context for the page, not one per chime. Browsers create a
+// context "suspended" until the page has had a tap or a key press, and a new
+// context made inside a timer never gets one — which is why the old chime
+// could be silent. This one is made on the first gesture and resumed then.
+let audioContext: AudioContext | null = null;
+
+function getAudioContext(): AudioContext | null {
+  if (audioContext) return audioContext;
   try {
     const AudioCtx =
       window.AudioContext ??
       (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!AudioCtx) return;
+    if (!AudioCtx) return null;
+    audioContext = new AudioCtx();
+  } catch {
+    return null;
+  }
+  return audioContext;
+}
 
-    const ctx = new AudioCtx();
+function hasUserActivation(): boolean {
+  const activation = (navigator as Navigator & { userActivation?: { hasBeenActive: boolean } })
+    .userActivation;
+  // Browsers without the API predate the autoplay rules that need it.
+  return activation ? activation.hasBeenActive : true;
+}
+
+// A short two-tone chime, synthesised rather than fetched: no asset to ship,
+// no request to fail, and it works the moment the page loads.
+function playChime() {
+  const ctx = getAudioContext();
+  if (!ctx || ctx.state !== "running") return;
+  try {
     const now = ctx.currentTime;
-
     [880, 1320].forEach((frequency, index) => {
       const oscillator = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -32,12 +62,8 @@ function playChime() {
       oscillator.start(start);
       oscillator.stop(start + 0.24);
     });
-
-    // Free the hardware once the sound has finished.
-    setTimeout(() => void ctx.close(), 800);
   } catch {
-    // Autoplay policy, no audio device, or a browser that refuses to build a
-    // context. The badge and the desktop notification still fire.
+    // No audio device. The badge and the notification still fire.
   }
 }
 
@@ -61,46 +87,88 @@ function writeSeen(seen: Set<string>) {
   }
 }
 
+function readSoundOn(): boolean {
+  try {
+    return window.localStorage.getItem(SOUND_KEY) !== "off";
+  } catch {
+    return true;
+  }
+}
+
+export type NotificationPermissionState = NotificationPermission | "unsupported";
+
+function readPermission(): NotificationPermissionState {
+  return typeof Notification === "undefined" ? "unsupported" : Notification.permission;
+}
+
 /**
- * Watches a list of order numbers and announces the ones this browser has not
+ * Watches the waiting orders and announces the ones this browser has not
  * shown before: a chime, a desktop notification, and a count the page can put
  * in the tab title.
+ *
+ * Only orders staff can act on count. A card order waiting on the customer's
+ * bank is not news yet; it rings when the payment lands and it becomes one.
  *
  * "Seen" is per-browser on purpose. Two staff phones watching the same board
  * should both be alerted; this is a doorbell, not a shared inbox.
  */
-export function useNewOrderAlert(orderNumbers: string[], enabled: boolean) {
+export function useNewOrderAlert(orders: AlertableOrder[], ready: boolean) {
   const { isArabic } = useLanguage();
   const [unseenCount, setUnseenCount] = useState(0);
-  const [soundOn, setSoundOn] = useState(true);
+  const [freshNumbers, setFreshNumbers] = useState<string[]>([]);
+  const [soundOn, setSoundOn] = useState(readSoundOn);
+  const [unlocked, setUnlocked] = useState(hasUserActivation);
+  const [notificationPermission, setNotificationPermission] =
+    useState<NotificationPermissionState>(readPermission);
   const seenRef = useRef<Set<string> | null>(null);
-  // The first poll after mount is the existing backlog, not new arrivals —
-  // announcing it would chime once per order every time the page is opened.
+  // The first loaded page is the existing backlog, not new arrivals —
+  // announcing it would ring once per order every time the page is opened.
   const primedRef = useRef(false);
 
+  // The first tap or key press anywhere is what lets the page make a sound.
   useEffect(() => {
-    if (!enabled) return;
+    function unlock() {
+      const ctx = getAudioContext();
+      void ctx?.resume().then(() => setUnlocked(true));
+      setUnlocked(true);
+    }
+    if (unlocked) {
+      void getAudioContext()?.resume();
+    }
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlock);
+      window.removeEventListener("keydown", unlock);
+    };
+  }, [unlocked]);
+
+  useEffect(() => {
+    if (!ready) return;
 
     if (seenRef.current === null) {
       seenRef.current = readSeen();
     }
     const seen = seenRef.current;
 
-    const fresh = orderNumbers.filter((orderNumber) => !seen.has(orderNumber));
-    if (fresh.length === 0) {
+    const fresh = orders
+      .filter(canConfirm)
+      .map((order) => order.orderNumber)
+      .filter((orderNumber) => !seen.has(orderNumber));
+
+    if (!primedRef.current) {
       primedRef.current = true;
+      fresh.forEach((orderNumber) => seen.add(orderNumber));
+      if (fresh.length > 0) writeSeen(seen);
       return;
     }
+    if (fresh.length === 0) return;
 
     fresh.forEach((orderNumber) => seen.add(orderNumber));
     writeSeen(seen);
 
-    if (!primedRef.current) {
-      primedRef.current = true;
-      return;
-    }
-
     setUnseenCount((count) => count + fresh.length);
+    setFreshNumbers((current) => [...current, ...fresh]);
 
     if (soundOn) playChime();
 
@@ -123,22 +191,45 @@ export function useNewOrderAlert(orderNumbers: string[], enabled: boolean) {
         // Some browsers only allow notifications from a service worker.
       }
     }
-  }, [orderNumbers, enabled, soundOn, isArabic]);
+  }, [orders, ready, soundOn, isArabic]);
 
   const requestPermission = useCallback(async () => {
     if (typeof Notification === "undefined") return;
     if (Notification.permission === "default") {
       await Notification.requestPermission();
     }
+    setNotificationPermission(readPermission());
+  }, []);
+
+  const toggleSound = useCallback(() => {
+    setSoundOn((on) => {
+      const next = !on;
+      try {
+        window.localStorage.setItem(SOUND_KEY, next ? "on" : "off");
+      } catch {
+        // The choice lasts until reload instead.
+      }
+      return next;
+    });
   }, []);
 
   return {
     unseenCount,
-    clearUnseen: useCallback(() => setUnseenCount(0), []),
+    freshNumbers,
+    clearUnseen: useCallback(() => {
+      setUnseenCount(0);
+      setFreshNumbers([]);
+    }, []),
+    dismissFresh: useCallback(
+      (orderNumber: string) =>
+        setFreshNumbers((current) => current.filter((number) => number !== orderNumber)),
+      [],
+    ),
     soundOn,
-    toggleSound: useCallback(() => setSoundOn((on) => !on), []),
+    toggleSound,
+    // Sound is wanted but the browser has not been given the tap it needs.
+    soundBlocked: soundOn && !unlocked,
     requestPermission,
-    notificationPermission:
-      typeof Notification === "undefined" ? "unsupported" : Notification.permission,
+    notificationPermission,
   };
 }

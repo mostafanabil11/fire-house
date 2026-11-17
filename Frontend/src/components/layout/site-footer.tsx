@@ -13,7 +13,7 @@ export function SiteFooter() {
           <FooterColumn title="Here to help" links={[["/contact","Contact"],["/faq","FAQ"],["/shipping-returns","Delivery information"]]} />
         </div>
       </div>
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-white/15 pt-5 text-[11px] text-background/65">
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-white/15 pt-5 text-xs text-background/65">
         <p>© {new Date().getFullYear()} <T>{RESTAURANT.name}</T>. <T>All rights reserved.</T></p>
         <div className="flex flex-wrap gap-5"><Link href="/terms" className="py-2 hover:text-white"><T>Terms</T></Link><Link href="/privacy" className="py-2 hover:text-white"><T>Privacy</T></Link>{RESTAURANT.instagram && <a href={RESTAURANT.instagram} target="_blank" rel="noopener noreferrer">Instagram</a>}{RESTAURANT.facebook && <a href={RESTAURANT.facebook} target="_blank" rel="noopener noreferrer">Facebook</a>}</div>
       </div>
